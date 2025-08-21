@@ -1,5 +1,6 @@
-# gfw-fronts-megafauna
-Analysis of the Global Fishing Watch dataset, ocean fronts, and megafauna in the Mozambique Channel
+# Global Fishing Watch, Ocean Fronts, and Megafauna Analysis in the Mozambique Channel
+Analysis of Global Fishing Watch datasets combined with ocean front dynamics to study the spatial distribution and interactions of megafauna in 
+the Mozambique Channel.
 
 ## 📂 Project Structure
 
