@@ -8,7 +8,7 @@ source("R/neardist.R")
 # cfg <- yaml::read_yaml("config/default.yml")
 
 res <- neardist_gfw_dir_parallel(
-  fsle_path   = "data_rout/FSLE_SWIO_2019-01.tif",
+  fsle_path   = "data-raw/BOAonMUR_SWIO_2019-01.tif",
   gfw_dir     = "data_rout/gfw_test/",
   cutoff      = 0.75,
   meters_crs  = "ESRI:54030",
@@ -17,4 +17,3 @@ res <- neardist_gfw_dir_parallel(
   file_prefix = "gfw",
   front_name  = NULL   # can be NULL
 )
-

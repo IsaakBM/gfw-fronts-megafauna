@@ -7,7 +7,7 @@
 # --- Full list of required packages ---
 libs <- c(
   "terra", "sf", "ggplot2", "RColorBrewer", "patchwork", "dplyr",
-  "rnaturalearth", "rnaturalearthdata",
+  "rnaturalearth", "rnaturalearthdata", "future.apply",
   "tidyr", "transformr", "stringr", "readr", "data.table",
   "doParallel", "foreach"
 )
