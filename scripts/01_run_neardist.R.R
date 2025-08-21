@@ -1,11 +1,11 @@
-# Activate renv if used (recommended)
+# Activate renv 
 if (requireNamespace("renv", quietly = TRUE)) try(renv::activate(), silent = TRUE)
 
 source("R/load_packages.R")
 source("R/utils_helpers.R")
 source("R/neardist.R")
 
-cfg <- yaml::read_yaml("config/default.yml")
+# cfg <- yaml::read_yaml("config/default.yml")
 
 res <- neardist_gfw_dir_parallel(
   fsle_path   = "data_rout/FSLE_SWIO_2019-01.tif",
