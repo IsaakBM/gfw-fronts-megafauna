@@ -50,3 +50,25 @@ rsconnect/
 
 # Mac DS files
 **/.DS_Store
+
+# =========================================
+# renv-specific ignores
+# =========================================
+
+# Cache folder — big compiled binaries
+renv/cache/
+
+# Lockfile *should NOT* be ignored! Keep renv.lock under version control.
+# renv.lock  <-- DO NOT ignore this one
+
+# Staging area used during installs
+renv/staging/
+
+# Temporary state during restore / snapshot
+renv/.renv/
+
+# Activate script (auto-generated, no need to track)
+renv/activate.R
+
+# Packrat compatibility files
+packrat/
