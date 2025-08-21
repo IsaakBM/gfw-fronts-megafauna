@@ -58,17 +58,11 @@ rsconnect/
 # Cache folder — big compiled binaries
 renv/cache/
 
-# Lockfile *should NOT* be ignored! Keep renv.lock under version control.
-# renv.lock  <-- DO NOT ignore this one
-
-# Staging area used during installs
+# Staging area used during installs (temporary)
 renv/staging/
 
-# Temporary state during restore / snapshot
+# Internal renv state (temporary)
 renv/.renv/
 
-# Activate script (auto-generated, no need to track)
-renv/activate.R
-
-# Packrat compatibility files
+# Packrat compatibility files (old dependency system, unused here)
 packrat/
