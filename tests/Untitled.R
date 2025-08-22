@@ -15,7 +15,9 @@ for(i in seq_along(gfw_yr_ls)) {
 
 
 wsT <- readRDS("data-raw/mm_mmf_02/mmf_WhaleShark_2011-08_71214.rds")
-sbT <- readRDS("data-raw/NosyVe_02/NosyVe_2018-05_EA583867.rds")
+sbT1 <- readRDS("data-raw/NosyVe_02/NosyVe_2018-05_EA583867.rds")
+sbT2 <- readRDS("data-raw/WTSH_02/WTSH_2017-11_FX20845.rds")
 trtT <- readRDS("data-raw/TMNT_02v02/TMNT_2019-01_657110.rds")
 
+readRDS("outputs/gfw_fsle_2019-01_cutoff-0.75.rds")
 unique(wsT$ptt)
