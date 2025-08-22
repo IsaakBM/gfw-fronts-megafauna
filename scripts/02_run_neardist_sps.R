@@ -1,17 +1,82 @@
-# Activate renv 
+# Activate renv -----------------------------------------------------------
 if (requireNamespace("renv", quietly = TRUE)) try(renv::activate(), silent = TRUE)
-
 source("R/load_packages.R")
 source("R/utils_helpers.R")
 source("R/neardist_sps.R")
 
-res <- neardist_track_dir_parallel(
-  fsle_path  = "data-raw/fronts_dynamical/FSLE_SWIO_2019-02.tif",  # or BOAonMUR_2018-05.tif
-  track_dir  = "data-raw/NosyVe_02/",         # folder with many .rds across years
-  output_dir = "outputs/",
-  cutoff     = 0.75,
-  meters_crs = "ESRI:54030",
-  n_cores    = 5
-)
+
+# Seabird RTTB ---- 2018-05; 2018-12; 2019-02; 2019-03 --------------------
+  
+  # Define target dates
+  target_dates <- c("2018-05", "2018-12", "2019-02", "2019-03")
+  # --- FSLE files ---
+  fsle_files <- list.files(
+    path = "data-raw/fronts_dynamical",
+    pattern = "FSLE_SWIO_.*\\.tif$",
+    full.names = TRUE
+    )
+  fsle_files <- fsle_files[grepl(paste(target_dates, collapse = "|"), fsle_files)]
+  # --- BOAonMUR files ---
+  boa_files <- list.files(
+    path = "data-raw/fronts_thermal",
+    pattern = "BOAonMUR_SWIO_.*\\.tif$",
+    full.names = TRUE
+    )
+  boa_files <- boa_files[grepl(paste(target_dates, collapse = "|"), boa_files)]
+  # --- Combine both into one vector ---
+  all_front_files <- c(fsle_files, boa_files)
+  # --- Loop through all matching rasters ---
+  for (i in seq_along(all_front_files)) {
+    front_file <- all_front_files[i]
+    message(sprintf("Processing %d/%d: %s", i, length(all_front_files), basename(front_file)))  # progress message
+    # Call your function
+    res <- neardist_track_dir_parallel(
+      fsle_path  = front_file,
+      track_dir  = "data-raw/tracks/RTTB/",   # <<-- change species dir when needed
+      output_dir = "outputs/tracks/RTTB/",
+      cutoff     = 0.75,
+      meters_crs = "ESRI:54030",
+      n_cores    = 5
+      )
+    message("Finished: ", basename(front_file))
+  }
+
+# Seabird WTSH ---- 2017-11; 2017-12; 2018-12; 2019-01 --------------------
+  
+  # Define target dates
+  target_dates <- c("2017-11", "2017-12", "2018-12", "2019-01")
+  # --- FSLE files ---
+  fsle_files <- list.files(
+    path = "data-raw/fronts_dynamical",
+    pattern = "FSLE_SWIO_.*\\.tif$",
+    full.names = TRUE
+  )
+  fsle_files <- fsle_files[grepl(paste(target_dates, collapse = "|"), fsle_files)]
+  # --- BOAonMUR files ---
+  boa_files <- list.files(
+    path = "data-raw/fronts_thermal",
+    pattern = "BOAonMUR_SWIO_.*\\.tif$",
+    full.names = TRUE
+  )
+  boa_files <- boa_files[grepl(paste(target_dates, collapse = "|"), boa_files)]
+  # --- Combine both into one vector ---
+  all_front_files <- c(fsle_files, boa_files)
+  # --- Loop through all matching rasters ---
+  for (i in seq_along(all_front_files)) {
+    front_file <- all_front_files[i]
+    message(sprintf("Processing %d/%d: %s", i, length(all_front_files), basename(front_file)))  # progress message
+    # Call your function
+    res <- neardist_track_dir_parallel(
+      fsle_path  = front_file,
+      track_dir  = "data-raw/tracks/WTSH/",   # <<-- change species dir when needed
+      output_dir = "outputs/tracks/WTSH/",
+      cutoff     = 0.75,
+      meters_crs = "ESRI:54030",
+      n_cores    = 5
+    )
+    message("Finished: ", basename(front_file))
+  }
 
 
+  
+  
