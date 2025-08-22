@@ -252,7 +252,8 @@ neardist_track_dir_parallel <- function(fsle_path,
         ym                = format(atts$date, "%Y-%m")
       )
     },
-    future.scheduling = 1
+    future.scheduling = 1,
+    future.seed = TRUE   # ensures parallel-safe, reproducible RNG bc warning in previous version
   )
   
   plan(sequential)
