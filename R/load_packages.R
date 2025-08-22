@@ -9,7 +9,7 @@ libs <- c(
   "terra", "sf", "ggplot2", "RColorBrewer", "patchwork", "dplyr",
   "rnaturalearth", "rnaturalearthdata", "future.apply",
   "tidyr", "transformr", "stringr", "readr", "data.table",
-  "doParallel", "foreach"
+  "doParallel", "foreach", "lwgeom"
 )
 
 # --- Prefer renv if active ---
