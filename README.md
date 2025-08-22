@@ -10,7 +10,6 @@ gfw-fronts-megafauna/
 │   ├── fronts_dynamical/    # Dynamical fronts data
 │   ├── fronts_thermal/      # Thermal fronts data
 │   ├── gfw_mzc_rds/        # GFW MZC RDS files
-│   └── untitled folder/     # Placeholder folder (rename later)
 ├── legacy/                  # Old/deprecated scripts or data
 ├── outputs/                 # Generated outputs (figures, tables, results)
 ├── R/                       # R source functions & scripts
