@@ -1,15 +1,114 @@
-suppressPackageStartupMessages({
-  library(terra)
-  library(sf)
-  library(dplyr)
-  library(stringr)
-  library(tibble)
-  library(future.apply)
-})
+#' Distance from animal tracking points to strong ocean fronts (parallel, by month)
+#'
+#' Computes distances from animal tracking points (whale sharks, turtles, red-tailed
+#' tropicbirds, wedge-tailed shearwaters) to strong ocean fronts derived from FSLE
+#' or BOA rasters. The function processes one month at a time (from \code{fsle_path}),
+#' matches points by exact date (YYYY-MM-DD) to daily raster layers, computes a
+#' strong-front mask via a quantile threshold, and extracts per-point distances
+#' to the nearest strong front in parallel.
+#'
+#' @param fsle_path Character. Path to the monthly FSLE/BOA raster file with daily
+#'   layers named as dates (e.g., \code{"data-raw/FSLE_SWIO_2018-05.tif"} or
+#'   \code{"data-raw/BOAonMUR_SWIO_2018-05.tif"}).
+#' @param track_dir Character. Directory containing tracking \code{.rds} files for
+#'   a species (or mixed), where filenames include the month tag (e.g., \code{"2018-05"}).
+#'   Files can be formatted as lists/tibbles/sf and may follow patterns like:
+#'   \itemize{
+#'     \item \code{mmf_WhaleShark_YYYY-MM_<ptt>.rds}
+#'     \item \code{TMNT_YYYY-MM_<ptt>.rds}
+#'     \item \code{NosyVe_YYYY-MM_<track>.rds}   (Red-tailed tropicbird)
+#'     \item \code{WTSH_YYYY-MM_<track>.rds}     (Wedge-tailed shearwater)
+#'   }
+#' @param output_dir Character. Directory where the output \code{.rds} files will
+#'   be written (one file per species for the month). Created if it does not exist.
+#' @param cutoff Numeric. Quantile threshold for classifying strong fronts
+#'   (e.g., \code{0.75} for the top 25\% strongest values).
+#' @param meters_crs Character or \code{CRS}. Projection used for distance
+#'   calculations (must be in meters), e.g., \code{"ESRI:54030"}.
+#' @param front_name Character or \code{NULL}. Optional short name for the front
+#'   product (e.g., \code{"fsle"}, \code{"boa"}). If \code{NULL}, inferred from
+#'   \code{fsle_path}.
+#' @param n_cores Integer. Number of workers for parallel computation.
+#'
+#' @details
+#' Only \code{.rds} files whose filenames contain the same \emph{YYYY-MM} as
+#' \code{fsle_path} are processed. Within that month, points are matched by exact
+#' date (YYYY-MM-DD) to the corresponding raster layer. The function:
+#' \enumerate{
+#'   \item Reads and standardizes tracking files (\code{x}, \code{y}, \code{date}).
+#'   \item Infers \code{species} and \code{track_id}:
+#'     \itemize{
+#'       \item \code{NosyVe_*}  \eqn{\rightarrow} species = "Red-tailed tropicbird", track\_id = \code{group}
+#'       \item \code{WTSH_*}    \eqn{\rightarrow} species = "Wedge-tailed shearwater", track\_id = \code{group}
+#'       \item others (e.g., Whale Shark / Turtle): species = \code{group}, track\_id = \code{ptt} (fallback to \code{group} if \code{ptt} missing)
+#'     }
+#'   \item For each day: reprojects the daily layer to \code{meters\_crs}, computes a
+#'         quantile threshold (\code{cutoff}), builds a strong-front mask, then uses
+#'         \code{terra::distance()} to get the distance-to-nearest-strong-front map.
+#'   \item Extracts per-point metrics: distance (km), front value at point, and a boolean
+#'         flag for being inside a strong front.
+#'   \item Writes one \code{.rds} per species for that month into \code{output\_dir}, using:
+#'         \code{<SPECIES_ABBR>_<front>_<YYYY-MM>_cutoff-<cutoff>.rds}, e.g.,
+#'         \code{RTTB_fsle_2018-05_cutoff-0.75.rds}.
+#' }
+#'
+#' Species abbreviations used in filenames:
+#' \itemize{
+#'   \item Red-tailed tropicbird \eqn{\rightarrow} \code{RTTB}
+#'   \item Wedge-tailed shearwater \eqn{\rightarrow} \code{WTSH}
+#'   \item Whale Shark \eqn{\rightarrow} \code{WHSH}
+#'   \item Loggerhead Turtle \eqn{\rightarrow} \code{LGHT}
+#' }
+#'
+#' @return A tibble with one row per tracking point that matched a raster day, including:
+#' \itemize{
+#'   \item \strong{date} — Observation date.
+#'   \item \strong{lon}, \strong{lat} — Geographic coordinates (WGS84).
+#'   \item \strong{species} — Species label.
+#'   \item \strong{track\_id} — Track identifier (PTT or code).
+#'   \item \strong{FrontMetric} — Front product name (e.g., "fsle" or "boa").
+#'   \item \strong{CutoffProb} — The quantile used.
+#'   \item \strong{ThresholdValue} — Threshold value for the day's raster.
+#'   \item \strong{DistHFront\_km} — Distance to nearest strong front (km).
+#'   \item \strong{FrontVal\_at\_point} — Front value at the point.
+#'   \item \strong{InStrongFront} — TRUE if the point falls within a strong-front cell.
+#'   \item \strong{ym} — Year-month tag (\code{"YYYY-MM"}).
+#' }
+#'
+#' @import future.apply
+#' @import dplyr
+#' @import terra
+#' @import sf
+#' @import stringr
+#' @import tibble
+#'
+#' @examples
+#' \dontrun{
+#' res <- neardist_track_dir_parallel(
+#'   fsle_path  = "data-raw/FSLE_SWIO_2018-05.tif",
+#'   track_dir  = "data-raw/NosyVe_tracks/",
+#'   output_dir = "outputs/",
+#'   cutoff     = 0.75,
+#'   meters_crs = "ESRI:54030",
+#'   n_cores    = 5
+#' )
+#' }
+#'
+#' @export
 
-# ----- helpers --------------------------------------------------------------
+ 
+# suppressPackageStartupMessages({
+#   library(terra)
+#   library(sf)
+#   library(dplyr)
+#   library(stringr)
+#   library(tibble)
+#   library(future.apply)
+# })
 
-# handy infix (if you don't already have it defined)
+# ----- SOME fx helpers --------------------------------------------------------------
+
+# handy infix
 `%||%` <- function(x, y) if (is.null(x) || !nzchar(x)) y else x
 
 .extract_df <- function(x) {
@@ -45,7 +144,7 @@ infer_front_name <- function(path) {
   if (str_detect(nm, "fsle")) "fsle" else if (str_detect(nm, "boa")) "boa" else "front"
 }
 
-# ----- main -----------------------------------------------------------------
+# ----- main FUNCTION -----------------------------------------------------------------
 
 neardist_track_dir_parallel <- function(fsle_path,
                                         track_dir,
@@ -188,18 +287,3 @@ neardist_track_dir_parallel <- function(fsle_path,
   
   res
 }
-
-res <- neardist_track_dir_parallel(
-  fsle_path  = "data-raw/fronts_dynamical/FSLE_SWIO_2019-02.tif",  # or BOAonMUR_2018-05.tif
-  track_dir  = "data-raw/NosyVe_02/",         # folder with many .rds across years
-  output_dir = "outputs/",
-  cutoff     = 0.75,
-  meters_crs = "ESRI:54030",
-  n_cores    = 5
-)
-
-
-test01 <- readRDS("outputs/RTTB_fsle_2019-02_cutoff-0.75.rds")
-nrow(test01) # 3097
-nrow(test01[test01$InStrongFront == TRUE, ]) # 625
-nrow(test01[test01$InStrongFront == FALSE, ]) # 2472
