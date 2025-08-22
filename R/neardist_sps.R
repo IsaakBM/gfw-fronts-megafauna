@@ -96,16 +96,6 @@
 #'
 #' @export
 
- 
-# suppressPackageStartupMessages({
-#   library(terra)
-#   library(sf)
-#   library(dplyr)
-#   library(stringr)
-#   library(tibble)
-#   library(future.apply)
-# })
-
 # ----- SOME fx helpers --------------------------------------------------------------
 
 # handy infix
