@@ -41,7 +41,7 @@ df_grid_robin <- st_transform(df_grid_sf, crs = robin)
 log_breaks <- c(1, 10, 100, 1e3, 1e4, 1e5)
 
 # 4) Plot with RColorBrewer + log scaling
-ggplot() +
+ggtest <- ggplot() +
   geom_sf(data = mzc_sf_Rob, linewidth = 0.2, fill = "grey20", color = "grey30") +
   geom_sf(data = df_grid_robin, aes(fill = total_fishing_hours), color = NA) +
   scale_fill_distiller(
@@ -67,3 +67,5 @@ ggplot() +
     panel.grid = element_blank(),
     legend.position = "right"
   )
+
+ggsave("outputs/ztest_01.pdf", plot = ggtest, width = 10, height = 10, dpi = 300, limitsize = FALSE)
