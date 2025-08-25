@@ -8,7 +8,7 @@ if (requireNamespace("renv", quietly = TRUE)) {
 # Source your function
 source("R/load_packages.R")
 source("R/utils_helpers.R")
-source("R/aggregate_gfw_by_cell.R")
+source("R/aggregate_gfw_by_cell_hpc.R")
 
 # Params (Mozambique Channel)
 parquet_path <- "data-raw/gfw_data_by_flag_and_gear_v20250820.parquet"
