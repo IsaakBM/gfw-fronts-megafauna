@@ -11,7 +11,8 @@ source("R/utils_helpers.R")
 source("R/aggregate_gfw_by_cell_hpc.R")
 
 # Params (Mozambique Channel)
-parquet_path <- "data-raw/gfw_data_by_flag_and_gear_v20250820.parquet"
+# parquet_path <- "data-raw/gfw_data_by_flag_and_gear_v20250820.parquet"
+parquet_path <- Sys.getenv("PARQUET_PATH", "data-raw/gfw_data_by_flag_and_gear_v20250820.parquet")
 bbox_ll  <- c(30, -30, 60, 0)                       # WGS84 lon/lat
 bbox_rob <- c(2671900, -3743317, 5654583, -748663.4) # Robinson (m)
 out_rds  <- "data-raw/agg_cell_gear_mzc_rob.rds"

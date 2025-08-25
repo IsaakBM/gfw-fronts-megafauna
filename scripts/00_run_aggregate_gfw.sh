@@ -8,12 +8,22 @@
 #SBATCH --mail-user=ibrito@eri.ucsb.edu
 #SBATCH --output=/home/sandbox-sparc/gfw-fronts-megafauna/logs/agg_gfw_%j.out
 #SBATCH --error=/home/sandbox-sparc/gfw-fronts-megafauna/logs/agg_gfw_%j.err
-#SBATCH --chdir=/home/sandbox-sparc/gfw-fronts-megafauna   # sets working dir
+#SBATCH --chdir=/home/sandbox-sparc/gfw-fronts-megafauna
 
 set -euo pipefail
 
 echo "[SLURM] Host: $(hostname)"
-echo "[SLURM] Cores: ${SLURM_CPUS_PER_TASK}"
+echo "[SLURM] Cores allocated: ${SLURM_CPUS_PER_TASK}"
 
-# Run the R runner (shebang lets us execute it directly)
-./scripts/00_run_aggregate_gfw.R
+# --- Stage Parquet file to node-local scratch (faster I/O) ---
+SRC="/home/sandbox-sparc/gfw-fronts-megafauna/data-raw/gfw_data_by_flag_and_gear_v20250820.parquet"
+LOCAL="${SLURM_TMPDIR:-/tmp}/gfw_data_by_flag_and_gear_v20250820.parquet"
+
+mkdir -p "$(dirname "$LOCAL")"
+cp -f "$SRC" "$LOCAL"
+echo "[SLURM] Using local parquet: $LOCAL"
+
+# --- Run R script explicitly with environment variables ---
+PARQUET_PATH="$LOCAL" \
+ARROW_NUM_THREADS="${SLURM_CPUS_PER_TASK}" \
+Rscript scripts/00_run_aggregate_gfw.R
