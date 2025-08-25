@@ -28,6 +28,16 @@ aggregate_gfw_by_cell <- function(
   ds <- arrow::open_dataset(parquet_path, format = "parquet") %>%
     dplyr::select(lon_bin, lat_bin, gear, fishing_hours, fishing_kw_hours)
   
+  # ---- FILTER EARLY (before group_by/summarise) ----
+  if (!is.null(bbox_lonlat)) {
+    stopifnot(length(bbox_lonlat) == 4)
+    xmin <- bbox_lonlat[1]; ymin <- bbox_lonlat[2]
+    xmax <- bbox_lonlat[3]; ymax <- bbox_lonlat[4]
+    ds <- ds %>%
+      dplyr::filter(lon_bin >= xmin, lon_bin <= xmax,
+                    lat_bin >= ymin, lat_bin <= ymax)
+  }
+  
   # Aggregate by lon/lat cell + gear (lazy, efficient)
   agg_lazy <- ds %>%
     dplyr::group_by(lon_bin, lat_bin, gear) %>%
@@ -37,17 +47,6 @@ aggregate_gfw_by_cell <- function(
       .groups = "drop"
     )
   
-  # Optional crop in lon/lat BEFORE collect (same logic as before)
-  if (!is.null(bbox_lonlat)) {
-    stopifnot(length(bbox_lonlat) == 4)
-    xmin <- bbox_lonlat[1]; ymin <- bbox_lonlat[2]
-    xmax <- bbox_lonlat[3]; ymax <- bbox_lonlat[4]
-    
-    agg_lazy <- agg_lazy %>%
-      dplyr::filter(lon_bin >= xmin, lon_bin <= xmax,
-                    lat_bin >= ymin, lat_bin <= ymax)
-  }
-  
   # Collect aggregated dataset into memory
   agg_df <- agg_lazy %>%
     dplyr::collect() %>%
@@ -55,17 +54,13 @@ aggregate_gfw_by_cell <- function(
   
   # Optional projection to Robinson and cropping in Robinson coordinates
   if (robinson) {
-    # Convert to sf object
     agg_sf <- sf::st_as_sf(agg_df, coords = c("lon", "lat"), crs = 4326)
-    
-    # Robinson projection
     rob_crs <- tryCatch(sf::st_crs("ESRI:54030"), error = function(e) NULL)
     if (is.null(rob_crs)) {
       rob_crs <- sf::st_crs("+proj=robin +datum=WGS84 +units=m +no_defs")
     }
     agg_sf_rob <- sf::st_transform(agg_sf, crs = rob_crs)
     
-    # Optional crop in Robinson
     if (!is.null(rob_bbox)) {
       stopifnot(length(rob_bbox) == 4)
       rb <- sf::st_bbox(
@@ -76,11 +71,9 @@ aggregate_gfw_by_cell <- function(
       agg_sf_rob <- sf::st_crop(agg_sf_rob, rb)
     }
     
-    # Save if requested
     if (!is.null(save_rds)) saveRDS(agg_sf_rob, save_rds)
     return(agg_sf_rob)
   } else {
-    # Save if requested
     if (!is.null(save_rds)) saveRDS(agg_df, save_rds)
     return(agg_df)
   }
