@@ -1,5 +1,9 @@
 #!/usr/bin/env Rscript
 
+# Disable renv autosnapshot (prevents SLURM from rewriting renv.lock)
+Sys.setenv(RENV_CONFIG_AUTOSNAPSHOT = "FALSE")
+Sys.setenv(RENV_SETTINGS_SNAPSHOT_TYPE = "explicit")
+
 # Activate renv if present (non-fatal)
 if (requireNamespace("renv", quietly = TRUE)) {
   try(renv::activate(), silent = TRUE)
