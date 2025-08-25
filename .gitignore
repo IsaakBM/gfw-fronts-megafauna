@@ -50,7 +50,10 @@ rsconnect/
 
 # Mac DS files
 **/.DS_Store
-
+# Mac netcdf files
+**/*.nc
+# Mac netcdf files
+**/*.tif
 # =========================================
 # renv-specific ignores
 # =========================================
