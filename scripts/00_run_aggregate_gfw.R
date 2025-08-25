@@ -33,7 +33,7 @@ t0 <- Sys.time()
 agg_mzc <- aggregate_gfw_by_cell(
   parquet_path = parquet_path,
   bbox_lonlat  = bbox_ll,
-  robinson     = FALSE,
+  robinson     = TRUE,
   rob_bbox     = bbox_rob,
   save_rds     = out_rds
 )
