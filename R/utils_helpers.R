@@ -17,9 +17,9 @@ get_world_robin <- function() {
 }
 
 get_world_latlon <- function() {
-  ne_countries(scale = "medium", returnclass = "sf") |>
-    st_transform(crs = LatLon) |>
-    st_make_valid()
+  ne_countries(scale = "medium", returnclass = "sf")
+    # st_transform(crs = LatLon) |>
+    # st_make_valid()
 }
 
 # --- Color palettes ---
