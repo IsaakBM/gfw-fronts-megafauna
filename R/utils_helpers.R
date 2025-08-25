@@ -16,6 +16,12 @@ get_world_robin <- function() {
     st_make_valid()
 }
 
+get_world_latlon <- function() {
+  ne_countries(scale = "medium", returnclass = "sf") |>
+    st_transform(crs = LatLon) |>
+    st_make_valid()
+}
+
 # --- Color palettes ---
 front_palette <- RColorBrewer::brewer.pal(9, "YlGnBu")
 
