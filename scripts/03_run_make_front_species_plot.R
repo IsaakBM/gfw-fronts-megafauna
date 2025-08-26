@@ -16,7 +16,7 @@ test01 <- make_front_species_plot(
   grid_size  = 0.10,
   xlim       = c(30, 65),
   ylim       = c(-35, 0),
-  # output_dir = "outputs",
+  output_dir = "outputs",
   width      = 10, height = 10, dpi = 300
 )
 
@@ -28,7 +28,7 @@ test02 <- make_front_species_plot(
   grid_size  = 0.10,
   xlim       = c(30, 65),
   ylim       = c(-35, 0),
-  # output_dir = "outputs",
+  output_dir = "outputs",
   width      = 10, height = 10, dpi = 300
 )
 
