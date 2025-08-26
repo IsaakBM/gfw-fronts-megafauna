@@ -8,9 +8,7 @@ source("R/plot_species_in_fronts_effort.R")
 
 
 
-# make_front_species_plot(product = "fsle", gears = "drifting_longlines")
-
-make_front_species_plot(
+test01 <- make_front_species_plot(
   tracks_dir = "outputs/tracks",
   product    = "boa",
   grid_file  = "data-raw/agg_cell_gear_mzc_rob.rds",
@@ -18,6 +16,26 @@ make_front_species_plot(
   grid_size  = 0.10,
   xlim       = c(30, 65),
   ylim       = c(-35, 0),
-  output_dir = "outputs",
+  # output_dir = "outputs",
   width      = 10, height = 10, dpi = 300
 )
+
+test02 <- make_front_species_plot(
+  tracks_dir = "outputs/tracks",
+  product    = "fsle",
+  grid_file  = "data-raw/agg_cell_gear_mzc_rob.rds",
+  gears      = "drifting_longlines",
+  grid_size  = 0.10,
+  xlim       = c(30, 65),
+  ylim       = c(-35, 0),
+  # output_dir = "outputs",
+  width      = 10, height = 10, dpi = 300
+)
+
+patch_test <- patchwork::wrap_plots(test02, test01, ncol = 2, byrow = TRUE) +
+  plot_annotation(title = "") + 
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_prefix = "(",
+                  tag_levels = "A", 
+                  tag_suffix = ")")
+ggsave("outputs/patch_fig_v01.png", plot = patch_test, width = 20, height = 10, dpi = 400)
