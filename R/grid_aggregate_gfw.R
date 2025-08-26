@@ -57,6 +57,7 @@
 #'
 #' @import sf
 #' @import dplyr
+#'
 grid_aggregate_sf <- function(
     rds_path,
     grid_size = 0.10,
