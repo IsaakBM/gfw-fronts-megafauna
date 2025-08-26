@@ -59,6 +59,7 @@ rsconnect/
 # data-raw i do not want for now
 data-raw/gfw_mzc_rds/
 outputs/gfw/
+outputs/figures/exploratory/
 tests/
 
 # =========================================
