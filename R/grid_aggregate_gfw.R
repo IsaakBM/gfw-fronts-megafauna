@@ -1,11 +1,11 @@
-#' Aggregate Fishing Effort Data to a Regular Lon/Lat Grid
+#' Aggregate Fishing Effort Data to a Regular Lon/Lat Grid (RDS input)
 #'
-#' This function bins fishing effort points into a regular lon/lat grid
-#' of user-specified resolution, avoiding floating-point join issues by
-#' using integer bin indices. It optionally filters by gear type(s),
-#' restricts to a bounding box, and aggregates both fishing hours and
-#' kW-hours if present. Returns an `sf` polygon layer representing grid
-#' cells with associated totals.
+#' This function bins fishing effort points (loaded from an `.rds` file)
+#' into a regular lon/lat grid of user-specified resolution, avoiding
+#' floating-point join issues by using integer bin indices. It optionally
+#' filters by gear type(s), restricts to a bounding box, and aggregates both
+#' fishing hours and kW-hours if present. Returns an `sf` polygon layer
+#' representing grid cells with associated totals.
 #'
 #' ## Supported Gear Types
 #' The input data may include the following values in the `gear` column:
@@ -24,14 +24,15 @@
 #'   \item purse_seines
 #' }
 #'
-#' @param a A data.frame with columns `lon`, `lat`, `gear`,
-#'   `fishing_hours_sum`, and optionally `fishing_kw_hours_sum`,
-#'   or an `sf` object with POINT geometry and the same attributes.
-#' @param grid_size Numeric. Grid cell size in degrees (e.g. `0.25`, `0.10`).
+#' @param rds_path Character scalar. Path to an `.rds` containing either a
+#'   data.frame with columns `lon`, `lat`, `gear`, `fishing_hours_sum`
+#'   (optionally `fishing_kw_hours_sum`) or an `sf` POINT object with those
+#'   attributes.
+#' @param grid_size Numeric. Grid cell size in degrees (e.g., `0.25`, `0.10`).
 #' @param gears Optional character vector of gear types to keep. If `NULL`
 #'   (default), all gear types are used.
 #' @param crs Integer or `st_crs` object. Coordinate reference system to
-#'   enforce (default: `4326`, WGS84 lon/lat).
+#'   enforce on input (default: `4326`, WGS84 lon/lat).
 #' @param bbox Optional numeric vector `c(xmin, ymin, xmax, ymax)` in degrees
 #'   defining a bounding box. If `NULL`, the extent of the data is used.
 #'
@@ -46,49 +47,51 @@
 #'
 #' @examples
 #' \dontrun{
-#' df <- tibble::tibble(
-#'   lon = c(54.48, 56.43, 49.19),
-#'   lat = c(-7.61, -12.26, -4.30),
-#'   gear = c("drifting_longlines","drifting_longlines","drifting_longlines"),
-#'   fishing_hours_sum = c(0.668, 3.44, 1.88),
-#'   fishing_kw_hours_sum = c(462, 2163, 1358)
+#' g10 <- grid_aggregate_sf(
+#'   rds_path  = "data-raw/agg_cell_gear_mzc_rob.rds",
+#'   grid_size = 0.10,
+#'   gears     = "drifting_longlines",
+#'   bbox      = c(30, -30, 60, 0)
 #' )
-#'
-#' g10 <- grid_aggregate_sf(df, grid_size = 0.10)              # all gears
-#' g25 <- grid_aggregate_sf(df, grid_size = 0.25, gears="trawlers")  # filter by gear
 #' }
 #'
 #' @import sf
 #' @import dplyr
 grid_aggregate_sf <- function(
-    a,
+    rds_path,
     grid_size = 0.10,
     gears = NULL,
     crs = 4326,
     bbox = NULL
 ) {
-  stopifnot(is.data.frame(a) || inherits(a, "sf"))
+  stopifnot(is.character(rds_path), length(rds_path) == 1L, file.exists(rds_path))
   
-  # Ensure sf POINT in WGS84
+  # ---- load .rds ----
+  a <- readRDS(rds_path)
+  
+  # ---- ensure sf POINT in WGS84 ----
   if (!inherits(a, "sf")) {
+    a <- as.data.frame(a)
     req <- c("lon","lat","gear","fishing_hours_sum")
     miss <- setdiff(req, names(a))
-    if (length(miss)) stop("Missing columns: ", paste(miss, collapse=", "))
+    if (length(miss)) stop("Missing columns: ", paste(miss, collapse = ", "))
     a <- sf::st_as_sf(a, coords = c("lon","lat"), crs = crs)
-  } else if (is.na(sf::st_crs(a))) {
-    sf::st_crs(a) <- crs
-  } else if (sf::st_crs(a)$epsg != crs) {
-    a <- sf::st_transform(a, crs)
+  } else {
+    if (is.na(sf::st_crs(a))) {
+      sf::st_crs(a) <- crs
+    } else if (!identical(sf::st_crs(a), sf::st_crs(crs))) {
+      a <- sf::st_transform(a, crs)
+    }
   }
   
-  # Optional gear filter
+  # ---- optional gear filter ----
   if (!is.null(gears) && "gear" %in% names(a)) {
     a <- dplyr::filter(a, .data$gear %in% gears)
   }
   
+  # ---- grid math (float-safe via integer bins) ----
   scale_fac <- 1 / grid_size
   
-  # Aligned bbox
   if (is.null(bbox)) {
     bb <- sf::st_bbox(a)
     xmin <- floor(as.numeric(bb["xmin"]) * scale_fac) / scale_fac
@@ -107,11 +110,11 @@ grid_aggregate_sf <- function(
   ny <- as.integer(round((ymax - ymin) * scale_fac))
   if (nx <= 0L || ny <= 0L) stop("Empty grid: check bbox/grid_size.")
   
-  # Grid polygons
-  extent_bbox <- sf::st_bbox(c(xmin=xmin, ymin=ymin, xmax=xmax, ymax=ymax), crs = crs)
+  # grid polygons (no float drift)
+  extent_bbox <- sf::st_bbox(c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax), crs = crs)
   grid <- sf::st_make_grid(extent_bbox, n = c(nx, ny), what = "polygons", square = TRUE)
   
-  # Integer indices for grid cells
+  # integer indices for grid cells from centers (exact inverse)
   cent <- sf::st_coordinates(sf::st_centroid(grid))
   ix_g <- as.integer(round((cent[,1] - xmin)/grid_size - 0.5))
   iy_g <- as.integer(round((cent[,2] - ymin)/grid_size - 0.5))
@@ -121,7 +124,7 @@ grid_aggregate_sf <- function(
       lat_bin = ymin + .data$iy * grid_size
     )
   
-  # Points -> integer bin indices
+  # points -> integer bin indices
   coords <- sf::st_coordinates(a)
   pts <- a |>
     dplyr::mutate(
@@ -130,7 +133,7 @@ grid_aggregate_sf <- function(
     ) |>
     sf::st_drop_geometry()
   
-  # Aggregate
+  # aggregate
   has_kw <- "fishing_kw_hours_sum" %in% names(pts)
   if (has_kw) {
     df_grid <- pts |>
