@@ -13,9 +13,9 @@ gfw-fronts-megafauna/
 ├── legacy/                  # Old/deprecated scripts or data
 ├── outputs/                  # Generated artifacts (do not hand-edit)
 │   ├── figures/
-│   │   ├── final/            # Publication/slide-ready figures  → commit
-│   │   ├── exploratory/      # Quick looks & drafts             → usually gitignored
-│   ├── tables/               # Exported tables (CSV/RDS)        → commit if small/stable
+│   │   ├── final/            # Publication/slide-ready figures  
+│   │   ├── exploratory/      # Quick looks & drafts             (gitignored)
+│   ├── tables/               # Exported tables (CSV/RDS)        
 ├── R/                       # R source functions & scripts
 ├── renv/                    # R environment managed by {renv}
 │   ├── library/            # Cached R packages for this project
