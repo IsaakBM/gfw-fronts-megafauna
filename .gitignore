@@ -54,6 +54,8 @@ rsconnect/
 **/*.nc
 # Mac netcdf files
 **/*.tif
+# Mac .parquet
+**/*.parquet
 # data-raw i do not want for now
 data-raw/gfw_mzc_rds/
 outputs/gfw/
