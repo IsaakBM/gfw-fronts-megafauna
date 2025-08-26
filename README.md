@@ -11,7 +11,11 @@ gfw-fronts-megafauna/
 │   ├── fronts_thermal/      # Thermal fronts data
 │   ├── gfw_mzc_rds/        # GFW MZC RDS files
 ├── legacy/                  # Old/deprecated scripts or data
-├── outputs/                 # Generated outputs (figures, tables, results)
+├── outputs/                  # Generated artifacts (do not hand-edit)
+│   ├── figures/
+│   │   ├── final/            # Publication/slide-ready figures  → commit
+│   │   ├── exploratory/      # Quick looks & drafts             → usually gitignored
+│   ├── tables/               # Exported tables (CSV/RDS)        → commit if small/stable
 ├── R/                       # R source functions & scripts
 ├── renv/                    # R environment managed by {renv}
 │   ├── library/            # Cached R packages for this project
