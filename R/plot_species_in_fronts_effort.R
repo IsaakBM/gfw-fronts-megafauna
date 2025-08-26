@@ -19,8 +19,8 @@
 #' @param grid_size Numeric. Grid resolution in decimal degrees. Default `0.10`.
 #' @param xlim,ylim Numeric vectors. Map extent. Defaults `c(30, 65)` and
 #'   `c(-35, 0)`.
-#' @param output_dir Character. Directory to save output plots. Default
-#'   `"outputs"`.
+#' @param output_dir Character or `NULL`. Output directory for saving plots.
+#'   If `NULL`, files are **not** written. Default `NULL`.
 #' @param width,height,dpi Numeric. Save dimensions (inches) and resolution.
 #'
 #' @return Invisibly returns the ggplot object.
@@ -29,14 +29,12 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Thermal (boa), all gears
+#' # Just return the plot (no files)
 #' make_front_species_plot(product = "boa")
 #'
-#' # Dynamical (fsle), drifting longlines only
-#' make_front_species_plot(product = "fsle", gears = "drifting_longlines")
-#'
-#' # Custom output directory
-#' make_front_species_plot(product = "boa", output_dir = "outputs/figures")
+#' # Save files in 'outputs/'
+#' make_front_species_plot(product = "fsle", gears = "drifting_longlines",
+#'                         output_dir = "outputs")
 #' }
 #'
 #' @import ggplot2
@@ -45,7 +43,6 @@
 #' @importFrom sf st_as_sf
 #' @importFrom scales label_number
 #' @export
-#' 
 make_front_species_plot <- function(
     tracks_dir   = "outputs/tracks",
     product      = c("boa", "fsle"),
@@ -54,7 +51,7 @@ make_front_species_plot <- function(
     grid_size    = 0.10,
     xlim         = c(30, 65),
     ylim         = c(-35, 0),
-    output_dir   = "outputs",
+    output_dir   = NULL,   # <-- changed (NULL means: don't save)
     width        = 10,
     height       = 10,
     dpi          = 300
@@ -62,7 +59,7 @@ make_front_species_plot <- function(
   # ---- setup ----
   product <- match.arg(product)
   front_label <- if (product == "boa") "thermal" else "dynamical"
-  gear_label  <- if (is.null(gears) || length(gears) == 0) "all" else gears
+  gear_label  <- if (is.null(gears) || length(geers <- gears) == 0) "all" else gears
   
   # ---- read tracks (points in fronts) ----
   DFF <- read_tracks_outputs(base_dir = tracks_dir, product = product)
@@ -84,14 +81,12 @@ make_front_species_plot <- function(
   # ---- species order + shapes (robust to extras) ----
   canonical <- c("Whale Shark", "Wedge-tailed shearwater",
                  "Red-tailed tropicbird", "Turtle")
-  # keep canonical first, then any others present
   other_levels <- setdiff(sort(unique(as.character(DFF$species))), canonical)
   sp_levels <- c(canonical, other_levels)
   DFF$species <- factor(as.character(DFF$species), levels = sp_levels)
   
-  base_shapes <- c(16, 17, 15, 3, 8, 18, 7, 4, 0, 1, 2, 5, 6) # pool if extras appear
+  base_shapes <- c(16, 17, 15, 3, 8, 18, 7, 4, 0, 1, 2, 5, 6)
   shape_map <- setNames(base_shapes[seq_along(sp_levels)], sp_levels)
-  # enforce canonical shapes when present
   fixed_map <- c("Whale Shark" = 16, "Wedge-tailed shearwater" = 17,
                  "Red-tailed tropicbird" = 15, "Turtle" = 3)
   for (nm in intersect(names(fixed_map), names(shape_map))) {
@@ -107,7 +102,6 @@ make_front_species_plot <- function(
   
   # ---- plot ----
   ggtest <- ggplot2::ggplot() +
-    # effort heatmap
     ggplot2::geom_sf(data = g_dll, ggplot2::aes(fill = total_fishing_hours), color = NA) +
     ggplot2::scale_fill_distiller(
       palette = "GnBu", direction = 1, trans = "log10",
@@ -120,9 +114,7 @@ make_front_species_plot <- function(
         title.theme = ggtext::element_markdown(hjust = 0)
       )
     ) +
-    # basemap
     ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey20", color = "grey30") +
-    # species points: single color, shape by species
     ggplot2::geom_sf(
       data = DFF,
       ggplot2::aes(shape = species),
@@ -133,7 +125,8 @@ make_front_species_plot <- function(
     ) +
     ggplot2::scale_shape_manual(
       values = shape_map,
-      name = paste0("Species<br/>(in ", front_label, " fronts)")
+      name = "Species<br/>(in front)"
+      # name = paste0("Species<br/>(in ", front_label, " fronts)")
     ) +
     ggplot2::guides(
       shape = ggplot2::guide_legend(
@@ -152,19 +145,20 @@ make_front_species_plot <- function(
       legend.text     = ggplot2::element_text(hjust = 0)
     )
   
-  # ---- save ----
-  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
-  base_name <- file.path(output_dir, sprintf("%s_%s_sps", product, gear_label))
-  
-  ggplot2::ggsave(
-    paste0(base_name, ".png"),
-    plot = ggtest, width = width, height = height, dpi = dpi, limitsize = FALSE
-  )
-  ggplot2::ggsave(
-    paste0(base_name, ".pdf"),
-    plot = ggtest, width = width, height = height, dpi = dpi,
-    limitsize = FALSE, device = cairo_pdf
-  )
+  # ---- save (optional) ----
+  if (!is.null(output_dir)) {
+    if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+    base_name <- file.path(output_dir, sprintf("%s_%s_sps", product, gear_label))
+    ggplot2::ggsave(
+      paste0(base_name, ".png"),
+      plot = ggtest, width = width, height = height, dpi = dpi, limitsize = FALSE
+    )
+    ggplot2::ggsave(
+      paste0(base_name, ".pdf"),
+      plot = ggtest, width = width, height = height, dpi = dpi,
+      limitsize = FALSE, device = cairo_pdf
+    )
+  }
   
   invisible(ggtest)
 }
