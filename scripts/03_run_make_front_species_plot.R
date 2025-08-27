@@ -51,4 +51,4 @@ test03 <- make_front_species_plot(
   output_dir = "outputs",
   width      = 10, height = 10, dpi = 300
 )
-# ggsave("outputs/all-gear_all-fronts_figv01.pdf", plot = test03, width = 10, height = 10, dpi = 400)
+ggsave("outputs/figures/final/all-gears_all-fronts_figv01.png", plot = test03, width = 10, height = 10, dpi = 400)
