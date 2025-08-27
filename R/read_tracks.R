@@ -5,9 +5,11 @@
 # ============================
 
 read_tracks_outputs <- function(base_dir = "outputs/tracks",
-                                product  = c("boa", "fsle"),
+                                product  = NULL,                # <-- NULL = read BOTH
                                 ignore_case = TRUE) {
-  product <- match.arg(product)
+  if (!is.null(product)) {
+    product <- match.arg(product, c("boa", "fsle"))
+  }
   
   # 1) list species subdirs (first level only)
   species_dirs <- list.dirs(path = base_dir, full.names = TRUE, recursive = FALSE)
@@ -24,10 +26,14 @@ read_tracks_outputs <- function(base_dir = "outputs/tracks",
   }
   
   # 3) filter for product token in filename (e.g., "boa" or "fsle")
-  rx <- if (ignore_case) regex(product, ignore_case = TRUE) else product
-  target_files <- all_files[str_detect(basename(all_files), rx)]
-  # base-R alternative:
-  # target_files <- all_files[grepl(product, basename(all_files), ignore.case = ignore_case)]
+  if (is.null(product)) {
+    target_files <- all_files                            # <-- read BOTH
+  } else {
+    rx <- if (ignore_case) regex(product, ignore_case = TRUE) else product
+    target_files <- all_files[str_detect(basename(all_files), rx)]
+    # base-R alternative:
+    # target_files <- all_files[grepl(product, basename(all_files), ignore.case = ignore_case)]
+  }
   
   if (!length(target_files)) {
     message("No files matched product '", product, "' under: ", base_dir)
@@ -68,3 +74,4 @@ read_tracks_outputs <- function(base_dir = "outputs/tracks",
 }
 
 # DFF <- read_tracks_outputs(base_dir = "outputs/tracks", product = "boa")
+# DFF <- read_tracks_outputs(base_dir = "outputs/tracks")
