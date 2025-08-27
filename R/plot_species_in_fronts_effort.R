@@ -10,8 +10,9 @@
 #' @inheritParams grid_aggregate_sf
 #' @param tracks_dir Character. Path to the directory containing track outputs.
 #'   Default: `"outputs/tracks"`.
-#' @param product Character. Type of fronts: `"boa"` (thermal) or `"fsle"`
-#'   (dynamical).
+#' @param product Character or `NULL`. `"boa"` (thermal) or `"fsle"` (dynamical).
+#'   If `NULL`, reads **both** (by omitting `product` in `read_tracks_outputs()`).
+#'   Default `NULL`.
 #' @param grid_file Character. Path to aggregated fishing-effort RDS file.
 #'   Default: `"data-raw/agg_cell_gear_mzc_rob.rds"`.
 #' @param gears Character or `NULL`. Gear filter (e.g., `"drifting_longlines"`).
@@ -29,8 +30,8 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Just return the plot (no files)
-#' make_front_species_plot(product = "boa")
+#' # Just return the plot (no files), reading both
+#' make_front_species_plot()
 #'
 #' # Save files in 'outputs/'
 #' make_front_species_plot(product = "fsle", gears = "drifting_longlines",
@@ -45,24 +46,34 @@
 #' @export
 make_front_species_plot <- function(
     tracks_dir   = "outputs/tracks",
-    product      = c("boa", "fsle"),
+    product      = NULL,  # <-- NULL means: read BOTH (omit product in reader)
     grid_file    = "data-raw/agg_cell_gear_mzc_rob.rds",
     gears        = NULL,
     grid_size    = 0.10,
     xlim         = c(30, 65),
     ylim         = c(-35, 0),
-    output_dir   = NULL,   # <-- changed (NULL means: don't save)
+    output_dir   = NULL,   # (NULL means: don't save)
     width        = 10,
     height       = 10,
     dpi          = 300
 ) {
   # ---- setup ----
-  product <- match.arg(product)
-  front_label <- if (product == "boa") "thermal" else "dynamical"
+  if (is.null(product)) {
+    prod_label  <- "both"
+    front_label <- "both"
+  } else {
+    product     <- match.arg(product, c("boa","fsle"))
+    prod_label  <- product
+    front_label <- if (product == "boa") "thermal" else "dynamical"
+  }
   gear_label  <- if (is.null(gears) || length(geers <- gears) == 0) "all" else gears
   
   # ---- read tracks (points in fronts) ----
-  DFF <- read_tracks_outputs(base_dir = tracks_dir, product = product)
+  DFF <- if (is.null(product)) {
+    read_tracks_outputs(base_dir = tracks_dir)  # omit product -> read BOTH
+  } else {
+    read_tracks_outputs(base_dir = tracks_dir, product = product)
+  }
   
   # ensure sf if lon/lat present
   if (!inherits(DFF, "sf")) {
@@ -148,7 +159,7 @@ make_front_species_plot <- function(
   # ---- save (optional) ----
   if (!is.null(output_dir)) {
     if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
-    base_name <- file.path(output_dir, sprintf("%s_%s_sps", product, gear_label))
+    base_name <- file.path(output_dir, sprintf("%s_%s_sps", prod_label, gear_label))  # <-- uses prod_label
     ggplot2::ggsave(
       paste0(base_name, ".png"),
       plot = ggtest, width = width, height = height, dpi = dpi, limitsize = FALSE
