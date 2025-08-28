@@ -47,8 +47,8 @@ test03 <- make_front_species_plot(
   # gears      = "drifting_longlines",
   grid_size  = 0.10,
   xlim       = c(30, 65),
-  ylim       = c(-35, 0),
-  output_dir = "outputs",
-  width      = 10, height = 10, dpi = 300
+  ylim       = c(-35, -5),
+  # output_dir = "outputs",
+  width      = 10, height = 8, dpi = 300
 )
-ggsave("outputs/figures/final/all-gears_all-fronts_figv01.png", plot = test03, width = 10, height = 10, dpi = 400)
+ggsave("outputs/figures/final/all-gears_all-fronts_figv02.png", plot = test03, width = 10, height = 10, dpi = 400)
