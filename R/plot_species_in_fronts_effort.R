@@ -8,8 +8,9 @@
 #'
 #' @inheritParams read_tracks_outputs
 #' @inheritParams grid_aggregate_sf
-#' @param tracks_dir Character. Path to the directory containing track outputs.
-#'   Default: `"outputs/tracks"`.
+#' @param tracks_dir Character or `NULL`. Path to the directory containing
+#'   track outputs. If `NULL`, **tracks are not read and not plotted**.
+#'   Default: `NULL`.
 #' @param product Character or `NULL`. `"boa"` (thermal) or `"fsle"` (dynamical).
 #'   If `NULL`, reads **both** (by omitting `product` in `read_tracks_outputs()`).
 #'   Default `NULL`.
@@ -39,6 +40,9 @@
 #' # Plot all tracks with one symbol (no species legend)
 #' make_front_species_plot(by_species = FALSE)
 #'
+#' # No tracks drawn
+#' make_front_species_plot(tracks_dir = NULL)
+#'
 #' # Save files in 'outputs/'
 #' make_front_species_plot(product = "fsle", gears = "drifting_longlines",
 #'                         output_dir = "outputs")
@@ -51,18 +55,18 @@
 #' @importFrom scales label_number
 #' @export
 make_front_species_plot <- function(
-    tracks_dir   = "outputs/tracks",
-    product      = NULL,  # <-- NULL means: read BOTH (omit product in reader)
+    tracks_dir   = NULL,    # <-- CHANGED: optional; if NULL, no tracks are plotted
+    product      = NULL,    # <-- NULL means: read BOTH (omit product in reader)
     grid_file    = "data-raw/agg_cell_gear_mzc_rob.rds",
     gears        = NULL,
     grid_size    = 0.10,
     xlim         = c(30, 65),
     ylim         = c(-35, 0),
-    output_dir   = NULL,   # (NULL means: don't save)
+    output_dir   = NULL,    # (NULL means: don't save)
     width        = 10,
     height       = 10,
     dpi          = 300,
-    by_species   = TRUE     # <-- NEW: control species-specific shapes
+    by_species   = TRUE     # control species-specific shapes
 ) {
   # ---- setup ----
   if (is.null(product)) {
@@ -76,39 +80,45 @@ make_front_species_plot <- function(
   gear_label  <- if (is.null(gears) || length(geers <- gears) == 0) "all" else gears
   
   # ---- read tracks (points in fronts) ----
-  DFF <- if (is.null(product)) {
-    read_tracks_outputs(base_dir = tracks_dir)  # omit product -> read BOTH
-  } else {
-    read_tracks_outputs(base_dir = tracks_dir, product = product)
-  }
-  
-  # ensure sf if lon/lat present
-  if (!inherits(DFF, "sf")) {
-    if (all(c("lon", "lat") %in% names(DFF))) {
-      DFF <- sf::st_as_sf(DFF, coords = c("lon", "lat"), crs = 4326)
+  DFF <- NULL
+  if (!is.null(tracks_dir)) {
+    DFF <- if (is.null(product)) {
+      read_tracks_outputs(base_dir = tracks_dir)  # omit product -> read BOTH
     } else {
-      stop("`DFF` is not sf and lon/lat columns are missing.")
+      read_tracks_outputs(base_dir = tracks_dir, product = product)
+    }
+    
+    # ensure sf if lon/lat present
+    if (!inherits(DFF, "sf")) {
+      if (all(c("lon", "lat") %in% names(DFF))) {
+        DFF <- sf::st_as_sf(DFF, coords = c("lon", "lat"), crs = 4326)
+      } else {
+        warning("Tracks provided but lon/lat columns are missing. Skipping tracks.")
+        DFF <- NULL
+      }
+    }
+    
+    # keep only points in strong fronts if column exists
+    if (!is.null(DFF) && "InStrongFront" %in% names(DFF)) {
+      DFF <- dplyr::filter(DFF, InStrongFront == TRUE)
     }
   }
   
-  # keep only points in strong fronts if column exists
-  if ("InStrongFront" %in% names(DFF)) {
-    DFF <- dplyr::filter(DFF, InStrongFront == TRUE)
-  }
-  
   # ---- species order + shapes (robust to extras) ----
-  canonical <- c("Whale Shark", "Wedge-tailed shearwater",
-                 "Red-tailed tropicbird", "Turtle")
-  other_levels <- setdiff(sort(unique(as.character(DFF$species))), canonical)
-  sp_levels <- c(canonical, other_levels)
-  DFF$species <- factor(as.character(DFF$species), levels = sp_levels)
-  
-  base_shapes <- c(16, 17, 15, 3, 8, 18, 7, 4, 0, 1, 2, 5, 6)
-  shape_map <- setNames(base_shapes[seq_along(sp_levels)], sp_levels)
-  fixed_map <- c("Whale Shark" = 16, "Wedge-tailed shearwater" = 17,
-                 "Red-tailed tropicbird" = 15, "Turtle" = 3)
-  for (nm in intersect(names(fixed_map), names(shape_map))) {
-    shape_map[nm] <- fixed_map[nm]
+  if (!is.null(DFF)) {
+    canonical <- c("Whale Shark", "Wedge-tailed shearwater",
+                   "Red-tailed tropicbird", "Turtle")
+    other_levels <- setdiff(sort(unique(as.character(DFF$species))), canonical)
+    sp_levels <- c(canonical, other_levels)
+    DFF$species <- factor(as.character(DFF$species), levels = sp_levels)
+    
+    base_shapes <- c(16, 17, 15, 3, 8, 18, 7, 4, 0, 1, 2, 5, 6)
+    shape_map <- setNames(base_shapes[seq_along(sp_levels)], sp_levels)
+    fixed_map <- c("Whale Shark" = 16, "Wedge-tailed shearwater" = 17,
+                   "Red-tailed tropicbird" = 15, "Turtle" = 3)
+    for (nm in intersect(names(fixed_map), names(shape_map))) {
+      shape_map[nm] <- fixed_map[nm]
+    }
   }
   
   # ---- fishing-effort grid ----
@@ -132,42 +142,45 @@ make_front_species_plot <- function(
         title.theme = ggtext::element_markdown(hjust = 0)
       )
     ) +
-    ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey20", color = "grey30") +
-    # species-mapped layer OR single-symbol layer
-    (if (by_species) {
-      ggplot2::geom_sf(
-        data = DFF,
-        ggplot2::aes(shape = species),
-        color = "black",
-        size  = 0.7,
-        alpha = 0.55,
-        inherit.aes = FALSE
-      )
+    ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey20", color = "grey30")
+  
+  # add tracks layer only if available
+  if (!is.null(DFF) && nrow(DFF) > 0) {
+    if (by_species) {
+      ggtest <- ggtest +
+        ggplot2::geom_sf(
+          data = DFF,
+          ggplot2::aes(shape = species),
+          color = "black",
+          size  = 0.7,
+          alpha = 0.55,
+          inherit.aes = FALSE
+        ) +
+        ggplot2::scale_shape_manual(
+          values = shape_map,
+          name = "Species<br/>(in front)"
+        ) +
+        ggplot2::guides(
+          shape = ggplot2::guide_legend(
+            override.aes = list(size = 2, alpha = 1),
+            title.position = "top",
+            title.theme = ggtext::element_markdown(hjust = 0)
+          )
+        )
     } else {
-      ggplot2::geom_sf(
-        data = DFF,
-        color = "black",
-        size  = 0.7,
-        alpha = 0.55,
-        inherit.aes = FALSE
-      )
-    }) +
-    # conditional scale and legend
-    (if (by_species) {
-      ggplot2::scale_shape_manual(
-        values = shape_map,
-        name = "Species<br/>(in front)"
-      )
-    } else {
-      NULL
-    }) +
-    ggplot2::guides(
-      shape = if (by_species) ggplot2::guide_legend(
-        override.aes = list(size = 2, alpha = 1),
-        title.position = "top",
-        title.theme = ggtext::element_markdown(hjust = 0)
-      ) else "none"
-    ) +
+      ggtest <- ggtest +
+        ggplot2::geom_sf(
+          data = DFF,
+          color = "black",
+          size  = 0.7,
+          alpha = 0.55,
+          inherit.aes = FALSE
+        ) +
+        ggplot2::guides(shape = "none")
+    }
+  }
+  
+  ggtest <- ggtest +
     ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
     ggplot2::labs(title = "", x = "", y = "") +
     ggplot2::theme_minimal(base_size = 13) +
