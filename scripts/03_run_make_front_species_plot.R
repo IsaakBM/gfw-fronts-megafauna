@@ -85,28 +85,58 @@ for (i in seq_along(gear_list)) {
 }
 # 1) One shared scale with fixed limits + identical name
 effort_scale <- scale_fill_distiller(
-  palette = "GnBu",
+  palette = "Reds", # "GnBu"
   direction = 1,
   trans = "log10",
   breaks = c(1, 10, 100, 1e3, 1e4, 1e5),
   limits = c(1, 1e5),  # <-- FORCE identical range across all children
   labels = scales::label_number(accuracy = 1, big.mark = ","),
   na.value = "white",
-  name = "Fishing Effort<br/>by 10 km<sup>2</sup> (Log<sub>10</sub> Scale)",  # same name in all
+  name = "Fishing Effort\nby 10 km² (log[10])",  # same name in all
   guide = guide_colorbar(title.position = "top")
 )
 
-# 2) Apply the SAME scale to each plot (and don't hide the fill guide anywhere)
-test_plot_fixed <- lapply(test_plot, function(p) {
+# 2) Apply the SAME scale, add gear titles, and unify styling
+nice_names <- c(
+  drifting_longlines = "Drifting longlines",
+  tuna_purse_seines  = "Tuna purse seines",
+  fishing            = "Fishing (unspecified)",
+  trawlers           = "Trawlers",
+  dredge_fishing     = "Dredge fishing",
+  set_longlines      = "Set longlines",
+  pole_and_line      = "Pole-and-line",
+  squid_jigger       = "Squid jiggers",
+  fixed_gear         = "Fixed gear",
+  set_gillnets       = "Set gillnets",
+  other_purse_seines = "Other purse seines",
+  purse_seines       = "Purse seines"
+)
+
+test_plot_fixed <- lapply(seq_along(test_plot), function(i) {
+  p  <- test_plot[[i]]                # get the plot
+  nm <- nice_names[names(test_plot)[i]]  # get the corresponding gear name
+  
   p + effort_scale + guides(fill = guide_colorbar()) +
-    theme(legend.position = "right")  # temp position; will be collected later
+    labs(title = nm) +
+    theme(
+      legend.position = "right",
+      plot.title = element_text(
+        hjust = 0.5,           # center the title
+        face = "bold",         # bold for visibility
+        size = 10,             # adjust size
+        margin = margin(b = 3) # small gap below title
+      )
+    )
 })
+names(test_plot_fixed) <- names(test_plot)  # keep names intact
 
 # 3) Wrap and collect
 patch_all_gt <- wrap_plots(plotlist = test_plot_fixed, ncol = 4, byrow = TRUE) +
   plot_layout(guides = "collect") +
   plot_annotation(tag_prefix = "(",
                   tag_levels = "a", 
-                  tag_suffix = ")") &
-  theme(legend.position = "bottom", legend.box = "vertical")
-ggsave("outputs/asdf_v03.png", plot = patch_all_gt, width = 40, height = 40, dpi = 300)
+                  tag_suffix = ")") # &
+  # theme(legend.position = "bottom", legend.box = "vertical")
+ggsave("outputs/figures/final/BritoMorales_ED_Fi_9.png", plot = patch_all_gt, width = 20, height = 20, dpi = 400, limitsize = FALSE)
+# ggsave("outputs/asdf_v03.pdf", plot = patch_all_gt, width = 20, height = 20, dpi = 400, limitsize = FALSE)
+
