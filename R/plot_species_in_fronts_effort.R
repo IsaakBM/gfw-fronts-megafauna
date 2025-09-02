@@ -20,6 +20,9 @@
 #' @param grid_size Numeric. Grid resolution in decimal degrees. Default `0.10`.
 #' @param xlim,ylim Numeric vectors. Map extent. Defaults `c(30, 65)` and
 #'   `c(-35, 0)`.
+#' @param by_species Logical. If `TRUE`, plot tracks with different shapes
+#'   by species (and show the species legend). If `FALSE`, plot all tracks
+#'   with a single symbol and hide the species legend. Default `TRUE`.
 #' @param output_dir Character or `NULL`. Output directory for saving plots.
 #'   If `NULL`, files are **not** written. Default `NULL`.
 #' @param width,height,dpi Numeric. Save dimensions (inches) and resolution.
@@ -32,6 +35,9 @@
 #' \dontrun{
 #' # Just return the plot (no files), reading both
 #' make_front_species_plot()
+#'
+#' # Plot all tracks with one symbol (no species legend)
+#' make_front_species_plot(by_species = FALSE)
 #'
 #' # Save files in 'outputs/'
 #' make_front_species_plot(product = "fsle", gears = "drifting_longlines",
@@ -55,7 +61,8 @@ make_front_species_plot <- function(
     output_dir   = NULL,   # (NULL means: don't save)
     width        = 10,
     height       = 10,
-    dpi          = 300
+    dpi          = 300,
+    by_species   = TRUE     # <-- NEW: control species-specific shapes
 ) {
   # ---- setup ----
   if (is.null(product)) {
@@ -126,25 +133,40 @@ make_front_species_plot <- function(
       )
     ) +
     ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey20", color = "grey30") +
-    ggplot2::geom_sf(
-      data = DFF,
-      ggplot2::aes(shape = species),
-      color = "black",
-      size  = 0.7,
-      alpha = 0.55,
-      inherit.aes = FALSE
-    ) +
-    ggplot2::scale_shape_manual(
-      values = shape_map,
-      name = "Species<br/>(in front)"
-      # name = paste0("Species<br/>(in ", front_label, " fronts)")
-    ) +
+    # species-mapped layer OR single-symbol layer
+    (if (by_species) {
+      ggplot2::geom_sf(
+        data = DFF,
+        ggplot2::aes(shape = species),
+        color = "black",
+        size  = 0.7,
+        alpha = 0.55,
+        inherit.aes = FALSE
+      )
+    } else {
+      ggplot2::geom_sf(
+        data = DFF,
+        color = "black",
+        size  = 0.7,
+        alpha = 0.55,
+        inherit.aes = FALSE
+      )
+    }) +
+    # conditional scale and legend
+    (if (by_species) {
+      ggplot2::scale_shape_manual(
+        values = shape_map,
+        name = "Species<br/>(in front)"
+      )
+    } else {
+      NULL
+    }) +
     ggplot2::guides(
-      shape = ggplot2::guide_legend(
+      shape = if (by_species) ggplot2::guide_legend(
         override.aes = list(size = 2, alpha = 1),
         title.position = "top",
         title.theme = ggtext::element_markdown(hjust = 0)
-      )
+      ) else "none"
     ) +
     ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
     ggplot2::labs(title = "", x = "", y = "") +
