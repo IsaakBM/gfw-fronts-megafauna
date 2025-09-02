@@ -52,7 +52,7 @@ test03 <- make_front_species_plot(
   width      = 10, height = 5, dpi = 300, 
   by_species = FALSE
 )
-ggsave("outputs/figures/final/all-gears_all-fronts_figv04.png", plot = test03, width = 10, height = 10, dpi = 400)
+ggsave("outputs/figures/final/BritoMorales_Fi_5.png", plot = test03, width = 10, height = 10, dpi = 400)
 
 
 
@@ -95,7 +95,7 @@ effort_scale <- scale_fill_distiller(
   name = "Fishing Effort\nby 10 km² (log[10])",  # same name in all
   guide = guide_colorbar(title.position = "top")
 )
-
+test_plot_nodredge <- test_plot[names(test_plot) != "dredge_fishing"]
 # 2) Apply the SAME scale, add gear titles, and unify styling
 nice_names <- c(
   drifting_longlines = "Drifting longlines",
@@ -112,9 +112,9 @@ nice_names <- c(
   purse_seines       = "Purse seines"
 )
 
-test_plot_fixed <- lapply(seq_along(test_plot), function(i) {
-  p  <- test_plot[[i]]                # get the plot
-  nm <- nice_names[names(test_plot)[i]]  # get the corresponding gear name
+test_plot_fixed <- lapply(seq_along(test_plot_nodredge), function(i) {
+  p  <- test_plot_nodredge[[i]]                 # get the plot
+  nm <- nice_names[names(test_plot_nodredge)[i]]  # get the corresponding gear name
   
   p + effort_scale + guides(fill = guide_colorbar()) +
     labs(title = nm) +
@@ -128,7 +128,10 @@ test_plot_fixed <- lapply(seq_along(test_plot), function(i) {
       )
     )
 })
-names(test_plot_fixed) <- names(test_plot)  # keep names intact
+
+# Keep names consistent for later references
+names(test_plot_fixed) <- names(test_plot_nodredge)
+
 
 # 3) Wrap and collect
 patch_all_gt <- wrap_plots(plotlist = test_plot_fixed, ncol = 4, byrow = TRUE) +
@@ -138,5 +141,4 @@ patch_all_gt <- wrap_plots(plotlist = test_plot_fixed, ncol = 4, byrow = TRUE) +
                   tag_suffix = ")") # &
   # theme(legend.position = "bottom", legend.box = "vertical")
 ggsave("outputs/figures/final/BritoMorales_ED_Fi_9.png", plot = patch_all_gt, width = 20, height = 20, dpi = 400, limitsize = FALSE)
-# ggsave("outputs/asdf_v03.pdf", plot = patch_all_gt, width = 20, height = 20, dpi = 400, limitsize = FALSE)
-
+ggsave("outputs/figures/final/BritoMorales_ED_Fi_9.pdf", plot = patch_all_gt, width = 20, height = 20, dpi = 400, limitsize = FALSE)
