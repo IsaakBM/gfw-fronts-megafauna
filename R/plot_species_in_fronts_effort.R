@@ -132,7 +132,7 @@ make_front_species_plot <- function(
   ggtest <- ggplot2::ggplot() +
     ggplot2::geom_sf(data = g_dll, ggplot2::aes(fill = total_fishing_hours), color = NA) +
     ggplot2::scale_fill_distiller(
-      palette = "GnBu", direction = 1, trans = "log10",
+      palette = "YlOrRd", direction = 1, trans = "log10", # "GnBu" [just in case i forgot]
       breaks = log_breaks,
       labels = scales::label_number(accuracy = 1, big.mark = ","),
       na.value = "white",
