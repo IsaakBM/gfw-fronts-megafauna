@@ -4,7 +4,7 @@ source("R/load_packages.R")
 source("R/utils_helpers.R")
 source("R/neardist_aerial.R")
 
-# Marine Mammals ---- 2010-01; 2010-02; 2010-03 --------------------
+# Aerial Surveys ---- 2010-01; 2010-02; 2010-03 --------------------
 
   # Define target dates
   target_dates <- c("2010-01", "2010-02", "2010-03")
@@ -25,6 +25,7 @@ source("R/neardist_aerial.R")
   # --- Combine both into one vector ---
   all_front_files <- c(fsle_files, boa_files)
   # --- Loop through all matching rasters ---
+  # Marine Mammals
   for (i in seq_along(all_front_files)) {
     front_file <- all_front_files[i]
     message(sprintf("Processing %d/%d: %s", i, length(all_front_files), basename(front_file)))  # progress message
@@ -33,6 +34,36 @@ source("R/neardist_aerial.R")
       fsle_path  = front_file,
       track_dir  = "data-raw/aerial/marine_mammals/",
       output_dir = "outputs/aerial/marine_mammals/",
+      cutoff     = 0.75,
+      meters_crs = "ESRI:54030",
+      n_cores    = 5
+    )
+    message("Finished: ", basename(front_file))
+  }
+  # Seabirds
+  for (i in seq_along(all_front_files)) {
+    front_file <- all_front_files[i]
+    message(sprintf("Processing %d/%d: %s", i, length(all_front_files), basename(front_file)))  # progress message
+    # Call your function
+    res <- neardist_aerial_dir_parallel(
+      fsle_path  = front_file,
+      track_dir  = "data-raw/aerial/seabirds/",
+      output_dir = "outputs/aerial/seabirds/",
+      cutoff     = 0.75,
+      meters_crs = "ESRI:54030",
+      n_cores    = 5
+    )
+    message("Finished: ", basename(front_file))
+  }
+  # other megafauna
+  for (i in seq_along(all_front_files)) {
+    front_file <- all_front_files[i]
+    message(sprintf("Processing %d/%d: %s", i, length(all_front_files), basename(front_file)))  # progress message
+    # Call your function
+    res <- neardist_aerial_dir_parallel(
+      fsle_path  = front_file,
+      track_dir  = "data-raw/aerial/other_megafauna/",
+      output_dir = "outputs/aerial/other_megafauna/",
       cutoff     = 0.75,
       meters_crs = "ESRI:54030",
       n_cores    = 5
