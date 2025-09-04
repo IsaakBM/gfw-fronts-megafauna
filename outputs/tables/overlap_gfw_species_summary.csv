@@ -5,3 +5,7 @@ overlap_cells,646,Number of grid cells where species presence and High fishing e
 pct_high_with_species,4.926784624771202,"Among all High fishing effort cells, the % that overlap with species presence (fisheries exposure)"
 pct_species_in_high,15.344418052256533,"Among all species-in-front cells, the % that overlap with High fishing effort (local species risk)"
 jaccard_iou,0.038738306548332935,Jaccard index: ratio of overlap cells relative to the union of High-effort and species-in-front cells
+total_cells,90000,Total number of grid cells in the study grid (map extent)
+pct_of_total_high_cells,14.568888888888889,Share of all grid cells that are High fishing effort
+pct_of_total_species_cells,4.677777777777778,Share of all grid cells that contain species in strong fronts
+pct_of_total_overlap_cells,0.7177777777777777,Share of all grid cells where High fishing effort and species fronts overlap
