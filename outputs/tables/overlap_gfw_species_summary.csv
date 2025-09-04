@@ -1,2 +1,7 @@
-high_cells,species_cells,overlap_cells,pct_high_with_species,pct_species_in_high,jaccard_iou
-20864,2725,468,2.2430981595092025,17.174311926605505,0.02024133904242896
+metric,value,description
+high_cells,20864,Total number of grid cells classified as High fishing effort
+species_cells,2725,Total number of grid cells with species present in strong fronts
+overlap_cells,468,Number of grid cells where species presence and High fishing effort overlap
+pct_high_with_species,2.2430981595092025,"Among all High fishing effort cells, the % that overlap with species presence (fisheries exposure)"
+pct_species_in_high,17.174311926605505,"Among all species-in-front cells, the % that overlap with High fishing effort (local species risk)"
+jaccard_iou,0.02024133904242896,Jaccard index: ratio of overlap cells relative to the union of High-effort and species-in-front cells
