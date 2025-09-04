@@ -35,7 +35,7 @@
 #'   \item Reprojects raster to \code{meters_crs}, builds a strong-front mask
 #'         using the chosen \code{cutoff}, and computes distance to nearest strong front.
 #'   \item Saves one `.rds` per input file, per month, into \code{output_dir}, named:
-#'         \code{<prefix>_<YYYY-MM>_<species>_cutoff-<cutoff>.rds}, where
+#'         \code{<prefix>_<front>_<YYYY-MM>_<species>_cutoff-<cutoff>.rds}, where
 #'         \code{prefix} = "mm" / "sb" / "om" depending on directory.
 #' }
 #'
@@ -49,7 +49,7 @@
 #'   \item \strong{FrontMetric} — Front product name (e.g., "fsle" or "boa").
 #'   \item \strong{CutoffProb} — Quantile used.
 #'   \item \strong{ThresholdValue} — Threshold value for strong fronts.
-#'   \item \strong{DistHFront_km} — Distance to nearest strong front (km).
+#'   \item \strong{DistHFront\_km} — Distance to nearest strong front (km).
 #'   \item \strong{FrontVal_at_point} — Front value at the observation point.
 #'   \item \strong{InStrongFront} — TRUE if the point falls inside a strong front.
 #'   \item \strong{ym} — Year-month tag (YYYY-MM).
@@ -196,23 +196,23 @@ neardist_aerial_dir_parallel <- function(fsle_path,
     res <- dplyr::bind_rows(res_list)
     if (!nrow(res)) return(res)
     
-    # Build clean species name for output file
-    sp_clean <- gsub("[^[:alnum:] ]", "", unique(df$species)[1])
-    sp_clean <- gsub(" ", "_", sp_clean)
+    # Build clean species name for output file (preserve spaces, strip unsafe)
+    sp_clean <- gsub("[/\\\\:*?\"<>|]", "-", unique(df$species)[1])
+    sp_clean <- trimws(gsub("\\s+", " ", sp_clean))
     
-    # Prefix based on directory name
+    # Prefix based on directory name (unchanged)
     prefix <- dplyr::case_when(
-      grepl("marine_mammals", track_dir) ~ "mm",
-      grepl("seabirds", track_dir)       ~ "sb",
+      grepl("marine_mammals", track_dir)  ~ "mm",
+      grepl("seabirds", track_dir)        ~ "sb",
       grepl("other_megafauna", track_dir) ~ "om",
-      TRUE                              ~ "obs"
+      TRUE                                ~ "obs"
     )
     
-    # Build output filename
+    # ---- Only change: include <front_name> after <prefix> in the filename ----
     out_file <- file.path(
       output_dir,
-      sprintf("%s_%s_%s_cutoff-%.2f.rds",
-              prefix, ym_tag, sp_clean, cutoff)
+      sprintf("%s_%s_%s_%s_cutoff-%.2f.rds",
+              prefix, front_name, ym_tag, sp_clean, cutoff)
     )
     
     saveRDS(res, out_file)
