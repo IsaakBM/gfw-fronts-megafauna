@@ -24,15 +24,15 @@ params <- list(
   gears        = c("drifting_longlines","tuna_purse_seines","set_longlines",
                    "other_purse_seines","purse_seines"),
   crs          = 4326,
-  bbox         = c(30, -30, 60, 0),
+  bbox         = c(30, -35, 65, 0),
   tracks_dir   = "outputs/tracks",
   out_dir_fig  = "outputs/figures",
   out_dir_tab  = "outputs/tables",
-  out_png      = "outputs/figures/overlap_gfw_species.png",
+  out_pdf      = "outputs/figures/BritoMorales_Fi_5.pdf",
   out_csv      = "outputs/tables/overlap_gfw_species_summary.csv",
-  dpi          = 300,
-  width_in     = 8,
-  height_in    = 7
+  dpi          = 400,
+  width_in     = 10,
+  height_in    = 10
 )
 
 # -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ agg <- grid_aggregate_sf(
   crs       = params$crs,
   bbox      = params$bbox
 )
-gfw <- classify_fishing_effort(agg)
+gfw <- classify_fishing_effort(agg) #### here the plot missing!
 
 # -----------------------------------------------------------------------------
 # ---- 02) Aggregate species positions in strong fronts -----------------------
@@ -159,25 +159,23 @@ readr::write_csv(overlap_summary, params$out_csv)
 # ---- 04) Plot overlap map ---------------------------------------------------
 #         (High effort, species-only, and overlap categories)
 # -----------------------------------------------------------------------------
-mzc_sf_lat <- get_world_latlon()
-# ensure same CRS
-mzc_sf_lat <- sf::st_transform(mzc_sf_lat, sf::st_crs(plot_df))
+# basemap in same CRS as plot_df
+mzc_sf_lat <- get_world_latlon() |> sf::st_transform(sf::st_crs(plot_df))
 
 xlim <- c(30, 65)
 ylim <- c(-35, 0)
 
-# split layers so we control order; drop "None"
 plot_high    <- dplyr::filter(plot_df, category == "High fishing effort")
 plot_species <- dplyr::filter(plot_df, category == "Species in fronts")
 plot_overlap <- dplyr::filter(plot_df, category == "Overlap")
 
 ggtest <- ggplot2::ggplot() +
-  # draw grid layers first (species, then high, then overlap on top)
+  # draw grids (species → high → overlap)
   ggplot2::geom_sf(data = plot_species, ggplot2::aes(fill = "Species in fronts"), color = NA) +
   ggplot2::geom_sf(data = plot_high,    ggplot2::aes(fill = "High fishing effort"), color = NA) +
   ggplot2::geom_sf(data = plot_overlap, ggplot2::aes(fill = "Overlap"),             color = NA) +
-  # coastline ON TOP so edges are visible
-  ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey90", color = "grey30") +
+  # land + borders styled like the effort figure
+  ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey20", color = "grey30") +
   ggplot2::scale_fill_manual(
     values = c(
       "Overlap"             = "#d73027",
@@ -191,21 +189,79 @@ ggtest <- ggplot2::ggplot() +
       title.theme    = ggtext::element_markdown(hjust = 0)
     )
   ) +
-  ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE, datum = NA) +
+  # IMPORTANT: keep datum (don’t set datum = NA) so lat/lon axes render
+  ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
   ggplot2::labs(title = "", x = "", y = "") +
   ggplot2::theme_minimal(base_size = 13) +
   ggplot2::theme(
-    panel.grid      = ggplot2::element_blank(),
+    # match the dark surround from your other map
+    plot.background  = ggplot2::element_rect(fill = "white", colour = NA),
+    panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+    panel.grid       = ggplot2::element_blank(),
+    # make axis labels/ticks visible on black
+    axis.text  = ggplot2::element_text(color = "grey70"),
+    axis.ticks = ggplot2::element_line(color = "grey50"),
+    # legend
     legend.position = "right",
-    legend.title    = ggplot2::element_text(hjust = 0),
-    legend.text     = ggplot2::element_text(hjust = 0)
+    legend.title    = ggplot2::element_text(hjust = 0, color = "black"),
+    legend.text     = ggplot2::element_text(hjust = 0, color = "black")
   )
 
+ggsave(
+  filename = params$out_pdf,
+  plot     = ggtest,
+  width    = params$width_in,
+  height   = params$height_in,
+  dpi      = params$dpi
+)
+message("Saved figure: ", params$out_png)
 
+# -----------------------------------------------------------------------------
+# ---- 05) Plot fishing effort categories --------------------------------------
+#         (Low / Medium / High effort classification from GFW data)
+# -----------------------------------------------------------------------------
+
+p_fishcat <- ggplot2::ggplot() +
+  # categorical fishing effort
+  ggplot2::geom_sf(
+    data  = gfw,
+    ggplot2::aes(fill = fishing_hours_cat),
+    color = NA
+  ) +
+  # landmask + borders (black look)
+  ggplot2::geom_sf(
+    data = mzc_sf_lat,
+    linewidth = 0.2,
+    fill = "black",
+    color = "black"
+  ) +
+  # your palette (3-class “RdYlBu”-style), NA = white
+  ggplot2::scale_fill_manual(
+    values = c(
+      "Low"    = "#91bfdb", # blue
+      "Medium" = "#ffffbf", # yellow
+      "High"   = "#fc8d59"  # orange
+    ),
+    breaks   = c("High","Medium","Low"),  # show High first in legend if you like
+    na.value = "white",
+    name     = "Fishing Effort (categorical)"
+  ) +
+  ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+  ggplot2::labs(title = "", x = "", y = "") +
+  ggplot2::theme_minimal(base_size = 13) +
+  ggplot2::theme(
+    panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+    panel.grid       = ggplot2::element_blank(),
+    axis.text        = ggplot2::element_text(color = "grey30"),
+    axis.ticks       = ggplot2::element_line(color = "grey60"),
+    legend.position  = "right",
+    legend.title     = ggplot2::element_text(hjust = 0),
+    legend.text      = ggplot2::element_text(hjust = 0)
+  )
 
 ggsave(
-  filename = params$out_png,
-  plot     = p,
+  filename = "outputs/figures/final/BritoMorales_ED_Fi_11.pdf",
+  plot     = p_fishcat,
   width    = params$width_in,
   height   = params$height_in,
   dpi      = params$dpi
@@ -215,3 +271,4 @@ message("Saved figure: ", params$out_png)
 # -----------------------------------------------------------------------------
 # End
 # -----------------------------------------------------------------------------
+
