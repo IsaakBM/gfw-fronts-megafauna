@@ -185,10 +185,11 @@ make_front_species_plot <- function(
     ggplot2::labs(title = "", x = "", y = "") +
     ggplot2::theme_minimal(base_size = 13) +
     ggplot2::theme(
-      panel.grid      = ggplot2::element_blank(),
-      legend.position = "right",
-      legend.title    = ggplot2::element_text(hjust = 0),
-      legend.text     = ggplot2::element_text(hjust = 0)
+      panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+      panel.grid       = ggplot2::element_blank(),
+      legend.position  = "right",
+      legend.title     = ggplot2::element_text(hjust = 0),
+      legend.text      = ggplot2::element_text(hjust = 0)
     )
   
   # ---- save (optional) ----
