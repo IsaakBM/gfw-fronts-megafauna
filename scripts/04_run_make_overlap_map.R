@@ -238,9 +238,9 @@ p_fishcat <- ggplot2::ggplot() +
   # your palette (3-class “RdYlBu”-style), NA = white
   ggplot2::scale_fill_manual(
     values = c(
-      "Low"    = "#91bfdb", # blue
-      "Medium" = "#ffffbf", # yellow
-      "High"   = "#fc8d59"  # orange
+      "Low"    = "#ffeda0", # blue
+      "Medium" = "#feb24c", # yellow
+      "High"   = "#f03b20"  # orange
     ),
     breaks   = c("High","Medium","Low"),  # show High first in legend if you like
     na.value = "white",
