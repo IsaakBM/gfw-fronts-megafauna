@@ -10,6 +10,7 @@ if (requireNamespace("renv", quietly = TRUE)) try(renv::activate(), silent = TRU
 
 # Load packages from central manager
 source("R/load_packages.R")
+source("R/utils_helpers.R")
 # Source project functions
 source("R/grid_aggregate_gfw.R")
 source("R/grid_aggregate_sps.R")
@@ -42,7 +43,8 @@ agg <- grid_aggregate_sf(
   rds_path  = params$rds_path,
   grid_size = params$grid_size,
   gears     = params$gears,
-  crs       = params$crs
+  crs       = params$crs,
+  bbox      = params$bbox
 )
 gfw <- classify_fishing_effort(agg)
 
@@ -90,48 +92,82 @@ P_species <- if (B > 0) 100 * I / B else NA_real_  # % of species cells in High
 Jaccard   <- if ((A + B - I) > 0) I / (A + B - I) else NA_real_
 
 overlap_summary <- tibble::tibble(
-  high_cells             = A,
-  species_cells          = B,
-  overlap_cells          = I,
-  pct_high_with_species  = P_high,
-  pct_species_in_high    = P_species,
-  jaccard_iou            = Jaccard
+  metric = c(
+    "high_cells",
+    "species_cells",
+    "overlap_cells",
+    "pct_high_with_species",
+    "pct_species_in_high",
+    "jaccard_iou"
+  ),
+  value = c(
+    A,
+    B,
+    I,
+    P_high,
+    P_species,
+    Jaccard
+  ),
+  description = c(
+    "Total number of grid cells classified as High fishing effort",
+    "Total number of grid cells with species present in strong fronts",
+    "Number of grid cells where species presence and High fishing effort overlap",
+    "Among all High fishing effort cells, the % that overlap with species presence (fisheries exposure)",
+    "Among all species-in-front cells, the % that overlap with High fishing effort (local species risk)",
+    "Jaccard index: ratio of overlap cells relative to the union of High-effort and species-in-front cells"
+  )
 )
+
+# Save annotated summary
 readr::write_csv(overlap_summary, params$out_csv)
 
 # -----------------------------------------------------------------------------
 # ---- 04) Plot overlap map ---------------------------------------------------
 #         (High effort, species-only, and overlap categories)
 # -----------------------------------------------------------------------------
+mzc_sf_lat <- get_world_latlon()
+# ensure same CRS
+mzc_sf_lat <- sf::st_transform(mzc_sf_lat, sf::st_crs(plot_df))
 
-p <- ggplot() +
-  geom_sf(
-    data = plot_df,
-    aes(fill = category),
-    color = NA
-  ) +
-  scale_fill_manual(
+xlim <- c(30, 65)
+ylim <- c(-35, 0)
+
+# split layers so we control order; drop "None"
+plot_high    <- dplyr::filter(plot_df, category == "High fishing effort")
+plot_species <- dplyr::filter(plot_df, category == "Species in fronts")
+plot_overlap <- dplyr::filter(plot_df, category == "Overlap")
+
+ggtest <- ggplot2::ggplot() +
+  # draw grid layers first (species, then high, then overlap on top)
+  ggplot2::geom_sf(data = plot_species, ggplot2::aes(fill = "Species in fronts"), color = NA) +
+  ggplot2::geom_sf(data = plot_high,    ggplot2::aes(fill = "High fishing effort"), color = NA) +
+  ggplot2::geom_sf(data = plot_overlap, ggplot2::aes(fill = "Overlap"),             color = NA) +
+  # coastline ON TOP so edges are visible
+  ggplot2::geom_sf(data = mzc_sf_lat, linewidth = 0.2, fill = "grey90", color = "grey30") +
+  ggplot2::scale_fill_manual(
     values = c(
-      "Overlap"             = "#d73027", # red
-      "High fishing effort" = "#fc8d59", # orange
-      "Species in fronts"   = "#4575b4", # blue
-      "None"                = "grey90"   # light grey
+      "Overlap"             = "#d73027",
+      "High fishing effort" = "#fc8d59",
+      "Species in fronts"   = "#4575b4"
     ),
     breaks = c("Overlap", "High fishing effort", "Species in fronts"),
-    na.value = "white",
-    guide = guide_legend(
-      title = "Overlap Between Species in Fronts<br/>and High Fishing Effort",
+    name   = "Overlap Between Species in Fronts<br/>and High Fishing Effort",
+    guide  = ggplot2::guide_legend(
       title.position = "top",
-      title.theme = ggtext::element_markdown(hjust = 0)
+      title.theme    = ggtext::element_markdown(hjust = 0)
     )
   ) +
-  theme_bw() +
-  theme(
+  ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE, datum = NA) +
+  ggplot2::labs(title = "", x = "", y = "") +
+  ggplot2::theme_minimal(base_size = 13) +
+  ggplot2::theme(
+    panel.grid      = ggplot2::element_blank(),
     legend.position = "right",
-    panel.grid      = element_blank(),
-    legend.title    = element_text(size = 11),
-    legend.text     = element_text(size = 9)
+    legend.title    = ggplot2::element_text(hjust = 0),
+    legend.text     = ggplot2::element_text(hjust = 0)
   )
+
+
 
 ggsave(
   filename = params$out_png,
