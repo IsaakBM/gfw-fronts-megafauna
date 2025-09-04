@@ -63,7 +63,8 @@ sps <- grid_aggregate_strongfront_sf(
 
 # -----------------------------------------------------------------------------
 # ---- 03) Merge layers + build masks + compute overlap metrics ---------------
-#         (High-effort cells, species-front cells, and their intersection)
+#         (High-effort cells, species-front cells, their intersection,
+#          and percentages relative to the total number of grid cells)
 # -----------------------------------------------------------------------------
 plot_df <- gfw %>%
   left_join(
@@ -117,6 +118,37 @@ overlap_summary <- tibble::tibble(
     "Among all High fishing effort cells, the % that overlap with species presence (fisheries exposure)",
     "Among all species-in-front cells, the % that overlap with High fishing effort (local species risk)",
     "Jaccard index: ratio of overlap cells relative to the union of High-effort and species-in-front cells"
+  )
+)
+
+# ---- Add total grid cell metrics ----
+N_total <- nrow(plot_df)
+
+pct_high_of_total    <- if (N_total > 0) 100 * A / N_total else NA_real_
+pct_species_of_total <- if (N_total > 0) 100 * B / N_total else NA_real_
+pct_overlap_of_total <- if (N_total > 0) 100 * I / N_total else NA_real_
+
+overlap_summary <- dplyr::bind_rows(
+  overlap_summary,
+  tibble::tibble(
+    metric = c(
+      "total_cells",
+      "pct_of_total_high_cells",
+      "pct_of_total_species_cells",
+      "pct_of_total_overlap_cells"
+    ),
+    value = c(
+      N_total,
+      pct_high_of_total,
+      pct_species_of_total,
+      pct_overlap_of_total
+    ),
+    description = c(
+      "Total number of grid cells in the study grid (map extent)",
+      "Share of all grid cells that are High fishing effort",
+      "Share of all grid cells that contain species in strong fronts",
+      "Share of all grid cells where High fishing effort and species fronts overlap"
+    )
   )
 )
 
