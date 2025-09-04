@@ -52,7 +52,9 @@ gfw <- classify_fishing_effort(agg)
 # ---- 02) Aggregate species positions in strong fronts -----------------------
 #         (InStrongFront == TRUE → counts per grid cell)
 # -----------------------------------------------------------------------------
-DFF <- read_tracks_outputs(base_dir = params$tracks_dir)
+DFF_tracks <- read_tracks_outputs(base_dir = params$tracks_dir)
+DFF_aerial <- read_tracks_outputs(base_dir = "outputs/aerial")
+DFF <- rbind(DFF_tracks, DFF_aerial)
 sps <- grid_aggregate_strongfront_sf(
   x         = DFF,
   grid_size = params$grid_size,
