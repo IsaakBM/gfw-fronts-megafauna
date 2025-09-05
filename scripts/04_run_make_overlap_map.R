@@ -171,7 +171,7 @@ plot_high    <- dplyr::filter(plot_df, category == "High fishing effort")
 plot_species <- dplyr::filter(plot_df, category == "Species in fronts")
 plot_overlap <- dplyr::filter(plot_df, category == "Overlap")
 
-ggtest <-   ggplot2::ggplot() +
+ggtest <- ggplot2::ggplot() +
   # ---------------------------------------------------------------------------
   # 1) Gridded layers (draw in order: species → high effort → overlap)
   # ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ ggtest <-   ggplot2::ggplot() +
       ggplot2::aes(fill = "Overlap"),
       color = NA
     ) +
-    # ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   # 2) Basemap (land + borders)
   # ---------------------------------------------------------------------------
   ggplot2::geom_sf(
@@ -199,6 +199,7 @@ ggtest <-   ggplot2::ggplot() +
     fill = "grey20",
     color = "grey30"
   ) +
+    
   # ---------------------------------------------------------------------------
   # 3) Fill scale & legend
   # ---------------------------------------------------------------------------
@@ -211,8 +212,9 @@ ggtest <-   ggplot2::ggplot() +
     breaks = c("Overlap", "High fishing effort", "Species in fronts"),
     name   = "Overlap Between Species in Fronts<br/>and High Fishing Effort",
     guide  = ggplot2::guide_legend(
-      title.position = "top",
-      title.theme    = ggtext::element_markdown(hjust = 0)
+      title.position = "top",        # title above the legend
+      title.theme    = ggtext::element_markdown(hjust = 0.5),
+      nrow = 1                      #  legend horizontal
     )
   ) +
   # ---------------------------------------------------------------------------
@@ -221,11 +223,11 @@ ggtest <-   ggplot2::ggplot() +
   ggplot2::geom_point(
     data  = islands_lbl_df,
     ggplot2::aes(x = lon, y = lat),
-    shape = 23,          # filled star
-    fill  = "green3",    # star fill
-    color = "black",     # star border
-    size  = 4,           # slightly larger
-    stroke = 0.5         # thicker outline
+    shape = 23,
+    fill  = "green3",
+    color = "black",
+    size  = 4,
+    stroke = 0.5
   ) +
     ggtext::geom_richtext(
       data  = islands_lbl_df,
@@ -234,7 +236,7 @@ ggtest <-   ggplot2::ggplot() +
       fill          = "white",
       size          = 3.2,
       fontface      = "bold",
-      vjust         = -1.2,  # nudge label above star
+      vjust         = -1.2,
       label.padding = grid::unit(c(1.5, 2, 1.5, 2), "pt"),
       label.r       = grid::unit(2, "pt")
     ) +
@@ -250,18 +252,18 @@ ggtest <-   ggplot2::ggplot() +
       panel.grid       = ggplot2::element_blank(),
       axis.text        = ggplot2::element_text(color = "grey70"),
       axis.ticks       = ggplot2::element_line(color = "grey50"),
-      legend.position  = "right",
+      # <-- CHANGE LEGEND POSITION TO BOTTOM -->
+      legend.position  = "bottom",
       legend.title     = ggplot2::element_text(
-        hjust = 0,
+        hjust = 0.5,
         color = "black",
-        size = 8.5,           # <-- smaller title size
-        face = "bold"        # keeps it bold but proportional
-        ),
+        size = 9,
+        face = "bold"
+      ),
       legend.text      = ggplot2::element_text(
-        hjust = 0,
         color = "black",
-        size = 8.5            
-        )
+        size = 9
+      )
     )
 
   ggsave(
