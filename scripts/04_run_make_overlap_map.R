@@ -173,98 +173,102 @@ plot_overlap <- dplyr::filter(plot_df, category == "Overlap")
 
 ggtest <- ggplot2::ggplot() +
   # ---------------------------------------------------------------------------
-  # 1) Gridded layers (draw in order: species → high effort → overlap)
-  # ---------------------------------------------------------------------------
+# 1) Gridded layers (draw in order: species → high effort → overlap)
+# ---------------------------------------------------------------------------
+ggplot2::geom_sf(
+  data = plot_species,
+  ggplot2::aes(fill = "Species in fronts"),
+  color = NA
+) +
   ggplot2::geom_sf(
-    data = plot_species,
-    ggplot2::aes(fill = "Species in fronts"),
+    data = plot_high,
+    ggplot2::aes(fill = "High fishing effort"),
     color = NA
   ) +
-    ggplot2::geom_sf(
-      data = plot_high,
-      ggplot2::aes(fill = "High fishing effort"),
-      color = NA
-    ) +
-    ggplot2::geom_sf(
-      data = plot_overlap,
-      ggplot2::aes(fill = "Overlap"),
-      color = NA
-    ) +
-  # ---------------------------------------------------------------------------
-  # 2) Basemap (land + borders)
-  # ---------------------------------------------------------------------------
   ggplot2::geom_sf(
-    data = mzc_sf_lat,
-    linewidth = 0.2,
-    fill = "grey20",
-    color = "grey30"
+    data = plot_overlap,
+    ggplot2::aes(fill = "Overlap"),
+    color = NA
   ) +
-    
+  
   # ---------------------------------------------------------------------------
-  # 3) Fill scale & legend
+# 2) Basemap (land + borders)
+# ---------------------------------------------------------------------------
+ggplot2::geom_sf(
+  data = mzc_sf_lat,
+  linewidth = 0.2,
+  fill = "grey20",
+  color = "grey30"
+) +
+  
   # ---------------------------------------------------------------------------
-  ggplot2::scale_fill_manual(
-    values = c(
-      "Overlap"              = "#d73027",
-      "High fishing effort"  = "#fc8d59",
-      "Species in fronts"    = "#4575b4"
-    ),
-    breaks = c("Overlap", "High fishing effort", "Species in fronts"),
-    name   = "Overlap Between Species in Fronts<br/>and High Fishing Effort",
-    guide  = ggplot2::guide_legend(
-      title.position = "top",        # title above the legend
-      title.theme    = ggtext::element_markdown(hjust = 0.5),
-      nrow = 1                      #  legend horizontal
-    )
-  ) +
+# 3) Fill scale & legend
+# ---------------------------------------------------------------------------
+ggplot2::scale_fill_manual(
+  values = c(
+    "Overlap"              = "#d73027",
+    "High fishing effort"  = "#fc8d59",
+    "Species in fronts"    = "#4575b4"
+  ),
+  breaks = c("Overlap", "High fishing effort", "Species in fronts"),
+  name   = "Overlap Between Species in Fronts<br/>and High Fishing Effort",
+  guide  = ggplot2::guide_legend(
+    title.position = "top",    # Title above the legend
+    title.theme    = ggtext::element_markdown(hjust = 0),  
+    nrow = 3                  # <-- BACK TO VERTICAL STACKING
+  )
+) +
+  
   # ---------------------------------------------------------------------------
-  # 4) Islands (stars + labels)
-  # ---------------------------------------------------------------------------
-  ggplot2::geom_point(
+# 4) Islands (stars + labels)
+# ---------------------------------------------------------------------------
+ggplot2::geom_point(
+  data  = islands_lbl_df,
+  ggplot2::aes(x = lon, y = lat),
+  shape = 23,
+  fill  = "green3",
+  color = "black",
+  size  = 4,
+  stroke = 0.5
+) +
+  ggtext::geom_richtext(
     data  = islands_lbl_df,
-    ggplot2::aes(x = lon, y = lat),
-    shape = 23,
-    fill  = "green3",
-    color = "black",
-    size  = 4,
-    stroke = 0.5
+    ggplot2::aes(x = lon, y = lat, label = name),
+    label.color   = "black",
+    fill          = "white",
+    size          = 3.2,
+    fontface      = "bold",
+    vjust         = -1.2,
+    label.padding = grid::unit(c(1.5, 2, 1.5, 2), "pt"),
+    label.r       = grid::unit(2, "pt")
   ) +
-    ggtext::geom_richtext(
-      data  = islands_lbl_df,
-      ggplot2::aes(x = lon, y = lat, label = name),
-      label.color   = "black",
-      fill          = "white",
-      size          = 3.2,
-      fontface      = "bold",
-      vjust         = -1.2,
-      label.padding = grid::unit(c(1.5, 2, 1.5, 2), "pt"),
-      label.r       = grid::unit(2, "pt")
-    ) +
+  
   # ---------------------------------------------------------------------------
-  # 5) Viewport, labels, and theme
-  # ---------------------------------------------------------------------------
-  ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
-    ggplot2::labs(title = "", x = "", y = "") +
-    ggplot2::theme_minimal(base_size = 13) +
-    ggplot2::theme(
-      plot.background  = ggplot2::element_rect(fill = "white", colour = NA),
-      panel.background = ggplot2::element_rect(fill = "white", colour = NA),
-      panel.grid       = ggplot2::element_blank(),
-      axis.text        = ggplot2::element_text(color = "grey70"),
-      axis.ticks       = ggplot2::element_line(color = "grey50"),
-      # <-- CHANGE LEGEND POSITION TO BOTTOM -->
-      legend.position  = "bottom",
-      legend.title     = ggplot2::element_text(
-        hjust = 0.5,
-        color = "black",
-        size = 9,
-        face = "bold"
-      ),
-      legend.text      = ggplot2::element_text(
-        color = "black",
-        size = 9
-      )
+# 5) Viewport, labels, and theme
+# ---------------------------------------------------------------------------
+ggplot2::coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+  ggplot2::labs(title = "", x = "", y = "") +
+  ggplot2::theme_minimal(base_size = 13) +
+  ggplot2::theme(
+    plot.background  = ggplot2::element_rect(fill = "white", colour = NA),
+    panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+    panel.grid       = ggplot2::element_blank(),
+    axis.text        = ggplot2::element_text(color = "grey70"),
+    axis.ticks       = ggplot2::element_line(color = "grey50"),
+    # <-- BACK TO RIGHT LEGEND -->
+    legend.position  = "right",
+    legend.title     = ggplot2::element_text(
+      hjust = 0,
+      color = "black",
+      size = 9,
+      face = "bold"
+    ),
+    legend.text      = ggplot2::element_text(
+      color = "black",
+      size = 9
     )
+  )
+
 
   ggsave(
     filename = params$out_pdf,
@@ -347,11 +351,9 @@ p_fishcat <- ggplot2::ggplot() +
       plot.background  = ggplot2::element_rect(fill = "white", colour = NA),
       panel.background = ggplot2::element_rect(fill = "white", colour = NA),
       panel.grid       = ggplot2::element_blank(),
-      
       # --- Axes ---
       axis.text        = ggplot2::element_text(color = "grey30"),   # clean & soft axis labels
       axis.ticks       = ggplot2::element_line(color = "grey60"),   # subtle tick marks
-      
       # --- Legend ---
       legend.position  = "right",
       legend.title     = ggplot2::element_text(
