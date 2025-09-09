@@ -22,7 +22,7 @@ params <- list(
   rds_path     = "data-raw/agg_cell_gear_mzc_rob.rds",
   grid_size    = 0.10,
   gears        = c("drifting_longlines","tuna_purse_seines","set_longlines",
-                   "other_purse_seines","purse_seines"),
+                   "other_purse_seines","purse_seines", "trawlers"),
   crs          = 4326,
   bbox         = c(30, -35, 65, 0),
   tracks_dir   = "outputs/tracks",
