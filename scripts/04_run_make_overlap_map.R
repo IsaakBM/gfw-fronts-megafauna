@@ -28,7 +28,7 @@ params <- list(
   tracks_dir   = "outputs/tracks",
   out_dir_fig  = "outputs/figures",
   out_dir_tab  = "outputs/tables",
-  out_pdf      = "outputs/figures/BritoMorales_Fi_5.pdf",
+  out_pdf      = "outputs/figures/final/BritoMorales_Fi_4.pdf",
   out_csv      = "outputs/tables/overlap_gfw_species_summary.csv",
   dpi          = 400,
   width_in     = 10,
@@ -166,7 +166,7 @@ readr::write_csv(overlap_summary, params$out_csv)
 
 # -----------------------------------------------------------------------------
 # ---- 04) Plot overlap map ---------------------------------------------------
-#         (High effort, species-only, and overlap categories)
+#         (High/medium effort, species-only, and overlap category)
 # -----------------------------------------------------------------------------
 # basemap in same CRS as plot_df
 mzc_sf_lat <- get_world_latlon() |> sf::st_transform(sf::st_crs(plot_df))
@@ -181,23 +181,37 @@ plot_species <- dplyr::filter(plot_df, category == "Species in fronts")
 plot_overlap <- dplyr::filter(plot_df, category == "Overlap")
 
 ggtest <- ggplot2::ggplot() +
-  # ---------------------------------------------------------------------------
-  # 1) Gridded layers (draw in order: species → high effort → overlap)
-  # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 1) Gridded layers (draw in correct order: medium → high → species → overlap)
+# ---------------------------------------------------------------------------
+  # Medium fishing effort layer (bottom of fishing)
   ggplot2::geom_sf(
-    data = plot_species,
-    ggplot2::aes(fill = "Species in fronts"),
-    color = NA
+    data = dplyr::filter(gfw, fishing_hours_cat == "Medium"),
+    ggplot2::aes(fill = "Medium fishing effort"),
+    color = NA,
+    alpha = 0.7
   ) +
+  # High fishing effort layer (above medium)
     ggplot2::geom_sf(
       data = plot_high,
       ggplot2::aes(fill = "High fishing effort"),
-      color = NA
+      color = NA,
+      alpha = 0.7
     ) +
+  # Overlap layer (absolute top, highlighted in purple)
     ggplot2::geom_sf(
       data = plot_overlap,
       ggplot2::aes(fill = "Overlap"),
       color = NA
+    ) +
+  # >>> Add border around overlap polygons <<<
+    ggplot2::geom_sf(
+      data = plot_overlap,
+      fill = NA,                 # outline only
+      color = "black",           # border color
+      linewidth = 0.15,          # tweak thickness if needed
+      linejoin = "round",        # smooth corners
+      show.legend = FALSE        # don't duplicate legend
     ) +
   # ---------------------------------------------------------------------------
   # 2) Basemap (land + borders)
@@ -209,20 +223,21 @@ ggtest <- ggplot2::ggplot() +
     color = "grey30"
   ) +
   # ---------------------------------------------------------------------------
-  # 3) Fill scale & legend
+  # 3) Combined fill scale & legend
   # ---------------------------------------------------------------------------
   ggplot2::scale_fill_manual(
     values = c(
-      "Overlap"              = "#d73027",
-      "High fishing effort"  = "#fc8d59",
-      "Species in fronts"    = "#4575b4"
+      "Overlap"               = "purple",   # purple for overlap
+      "High fishing effort"   = "#f03b20",  # red for high effort
+      "Medium fishing effort" = "#feb24c",  # orange for medium effort
+      "Species in fronts"     = "#4575b4"   # blue for species
     ),
-    breaks = c("Overlap", "High fishing effort", "Species in fronts"),
-    name   = "Overlap Between Species in Fronts<br/>and High Fishing Effort",
+    breaks = c("Overlap", "High fishing effort", "Medium fishing effort", "Species in fronts"),
+    name   = "Overlap Between Species in Fronts<br/>and Fishing Effort",
     guide  = ggplot2::guide_legend(
-      title.position = "top",    # Title above the legend
-      title.theme    = ggtext::element_markdown(hjust = 0),  
-      nrow = 3                  # <-- BACK TO VERTICAL STACKING
+      title.position = "top",
+      title.theme    = ggtext::element_markdown(hjust = 0),
+      nrow = 4
     )
   ) +
   # ---------------------------------------------------------------------------
@@ -232,9 +247,9 @@ ggtest <- ggplot2::ggplot() +
     data  = islands_lbl_df,
     ggplot2::aes(x = lon, y = lat),
     shape = 23,
-    fill  = "green3",
+    fill  = "green",
     color = "black",
-    size  = 4,
+    size = 6,
     stroke = 0.5
   ) +
     ggtext::geom_richtext(
@@ -260,7 +275,6 @@ ggtest <- ggplot2::ggplot() +
       panel.grid       = ggplot2::element_blank(),
       axis.text        = ggplot2::element_text(color = "grey70"),
       axis.ticks       = ggplot2::element_line(color = "grey50"),
-      # <-- BACK TO RIGHT LEGEND -->
       legend.position  = "right",
       legend.title     = ggplot2::element_text(
         hjust = 0,
@@ -281,7 +295,7 @@ ggtest <- ggplot2::ggplot() +
     height   = params$height_in,
     dpi      = params$dpi
   )
-  message("Saved figure: ", params$out_png)
+  # message("Saved figure: ", params$out_png)
 
 # -----------------------------------------------------------------------------
 # ---- 05) Plot fishing effort categories --------------------------------------
