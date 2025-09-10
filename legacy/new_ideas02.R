@@ -16,12 +16,12 @@ ggplot2::geom_sf(
     color = NA,
     alpha = 0.7
   ) +
-  # Species layer (now above all fishing effort)
-  ggplot2::geom_sf(
-    data = plot_species,
-    ggplot2::aes(fill = "Species in fronts"),
-    color = NA
-  ) +
+  # # Species layer (now above all fishing effort)
+  # ggplot2::geom_sf(
+  #   data = plot_species,
+  #   ggplot2::aes(fill = "Species in fronts"),
+  #   color = NA
+  # ) +
   # Overlap layer (absolute top, highlighted in pink)
   ggplot2::geom_sf(
     data = plot_overlap,
