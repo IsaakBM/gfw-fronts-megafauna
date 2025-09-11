@@ -133,7 +133,9 @@ overlap_summary <- tibble::tibble(
 # ---- Add total grid cell metrics ----
 N_total <- nrow(plot_df)
 
-pct_high_of_total    <- if (N_total > 0) 100 * A / N_total else NA_real_
+pct_high_of_total   <- if (N_total > 0) 100 * sum(plot_df$fishing_hours_cat == "High",   na.rm = TRUE) / N_total else NA_real_
+pct_medium_of_total <- if (N_total > 0) 100 * sum(plot_df$fishing_hours_cat == "Medium", na.rm = TRUE) / N_total else NA_real_
+pct_low_of_total    <- if (N_total > 0) 100 * sum(plot_df$fishing_hours_cat == "Low",    na.rm = TRUE) / N_total else NA_real_
 pct_species_of_total <- if (N_total > 0) 100 * B / N_total else NA_real_
 pct_overlap_of_total <- if (N_total > 0) 100 * I / N_total else NA_real_
 
@@ -143,18 +145,24 @@ overlap_summary <- dplyr::bind_rows(
     metric = c(
       "total_cells",
       "pct_of_total_high_cells",
+      "pct_of_total_medium_cells",
+      "pct_of_total_low_cells",
       "pct_of_total_species_cells",
       "pct_of_total_overlap_cells"
     ),
     value = c(
       N_total,
       pct_high_of_total,
+      pct_medium_of_total,
+      pct_low_of_total,
       pct_species_of_total,
       pct_overlap_of_total
     ),
     description = c(
       "Total number of grid cells in the study grid (map extent)",
       "Share of all grid cells that are High fishing effort",
+      "Share of all grid cells that are Medium fishing effort",
+      "Share of all grid cells that are Low fishing effort",
       "Share of all grid cells that contain species in strong fronts",
       "Share of all grid cells where High fishing effort and species fronts overlap"
     )
