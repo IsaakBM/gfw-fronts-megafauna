@@ -7,5 +7,7 @@ pct_species_in_high,16.39834406623735,"Among all species-in-front cells, the % t
 jaccard_iou,0.028875749230520005,Jaccard index: ratio of overlap cells relative to the union of High-effort and species-in-front cells
 total_cells,122500,Total number of grid cells in the study grid (map extent)
 pct_of_total_high_cells,17.18938775510204,Share of all grid cells that are High fishing effort
+pct_of_total_medium_cells,34.37877551020408,Share of all grid cells that are Medium fishing effort
+pct_of_total_low_cells,17.18938775510204,Share of all grid cells that are Low fishing effort
 pct_of_total_species_cells,3.5493877551020407,Share of all grid cells that contain species in strong fronts
 pct_of_total_overlap_cells,0.5820408163265306,Share of all grid cells where High fishing effort and species fronts overlap
